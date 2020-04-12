@@ -1,0 +1,17 @@
+plugins {
+    id "com.github.node-gradle.node" version "2.2.3"
+}
+
+apply plugin: 'base'
+
+node {
+    version = '12.16.1'
+    npmVersion = '6.13.4'
+    download = true
+    yarnVersion = '1.6.0'
+}
+
+task run(type: NpmTask) {
+    dependsOn npm_install
+    args = ['run', 'serve']
+}
