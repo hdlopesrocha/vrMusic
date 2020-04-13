@@ -7,6 +7,8 @@
     import fragmentShader from 'raw-loader!./shader.frag';
     import webgl from '../../utils/webgl';
     import * as glm from 'gl-matrix'
+    import model from 'url-loader!../../assets/models/monkey.gltf';
+    import GLTFLoader from 'three-gltf-loader';
 
 
     export default {
@@ -34,45 +36,47 @@
             const zNear = 0.1;
             const zFar = 100.0;
 
+            glm.mat4.perspective(this.projectionMatrix, fieldOfView, aspect, zNear, zFar);
 
-            glm.mat4.perspective(this.projectionMatrix,
-                fieldOfView,
-                aspect,
-                zNear,
-                zFar);
-
-
-            let vertices = [
-                0,1,0,
-                Math.sin((1.0/5)*2*Math.PI),0,Math.cos((1.0/5)*2*Math.PI),
-                Math.sin((2.0/5)*2*Math.PI),0,Math.cos((2.0/5)*2*Math.PI),
-                Math.sin((3.0/5)*2*Math.PI),0,Math.cos((3.0/5)*2*Math.PI),
-                Math.sin((4.0/5)*2*Math.PI),0,Math.cos((4.0/5)*2*Math.PI),
-                Math.sin((5.0/5)*2*Math.PI),0,Math.cos((5.0/5)*2*Math.PI),
-                0,-1,0,
-            ];
-
-            const indices = [
-                0,  1,  2,
-                0,  2,  3,
-                0,  3,  4,
-                0,  4,  5,
-                0,  5,  1,
-
-                6,  1,  2,
-                6,  2,  3,
-                6,  3,  4,
-                6,  4,  5,
-                6,  5,  1,
-            ];
+            let vertices = [];
+            let normals = [];
+            let indices = [];
 
             let vertex_buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
+            let normal_buffer = gl.createBuffer();
             let index_buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+            const loader = new GLTFLoader();
+            loader.load(model,
+                ( gltf ) => {
+                    // called when the resource is loaded
+                    console.log(gltf);
+                    vertices = gltf.scene.children[0].geometry.attributes.position.array;
+                    normals =  gltf.scene.children[0].geometry.attributes.normal.array;
+                    indices = gltf.scene.children[0].geometry.index.array;
+
+                    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+                    gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+                    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+                    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+                },
+                ( xhr ) => {
+                    // called while loading is progressing
+                    console.log( `${( xhr.loaded / xhr.total * 100 )}% loaded` );
+                },
+                ( error ) => {
+                    // called when loading has errors
+                    console.error( 'An error happened', error );
+                },
+            );
+
+            console.log(vertices);
+            console.log(indices);
+
+
 
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
@@ -81,9 +85,9 @@
 
             function update(gl, state) {
                 let distance = 5;
-                let center = glm.vec3.fromValues(0,0,0);
-                let up = glm.vec3.fromValues(0,1,0);
-                let eye = glm.vec3.fromValues(distance * Math.sin(state.time), distance, distance * Math.cos(state.time) );
+                let center = glm.vec3.fromValues(0, 0, 0);
+                let up = glm.vec3.fromValues(0, 1, 0);
+                let eye = glm.vec3.fromValues(distance * Math.sin(state.time), distance, distance * Math.cos(state.time));
                 glm.mat4.lookAt(that.viewMatrix, eye, center, up);
 
                 glm.mat4.multiply(modelViewMatrix, that.viewMatrix, that.modelMatrix);
@@ -99,16 +103,20 @@
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 
+                gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
+                gl.vertexAttribPointer(programInfo.attribLocations.vertexNormal, 3, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
+
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
 
-                gl.drawElements(gl.LINES, indices.length, gl.UNSIGNED_SHORT, 0);
+                gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
             }
 
             function cleanScene(gl) {
-                gl.clearColor(0, 0, 0, 1.0);
+                gl.clearColor(0.2, 0.2, 0.2, 1.0);
                 gl.enable(gl.DEPTH_TEST);
                 gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.viewport(0,0,canvas.width,canvas.height);
+                gl.viewport(0, 0, canvas.width, canvas.height);
             }
 
             webgl.loop(gl, draw, update);

@@ -51,7 +51,9 @@ export default {
                 time: 0,
             attribLocations: {
             vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-        },
+                vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
+
+            },
             uniformLocations: {
                 projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
                     modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),

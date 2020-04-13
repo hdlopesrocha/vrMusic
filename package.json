@@ -10,7 +10,10 @@
   "dependencies": {
     "bluebird": "^3.7.2",
     "core-js": "^3.6.4",
+    "fs-extra": "^9.0.0",
     "gl-matrix": "^3.3.0",
+    "three": "^0.115.0",
+    "three-gltf-loader": "^1.111.0",
     "vue": "^2.6.11"
   },
   "devDependencies": {
