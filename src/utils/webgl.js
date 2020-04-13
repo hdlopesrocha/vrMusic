@@ -29,6 +29,34 @@ export default {
         }
 
         return shader;
+    },
+    loop(gl, drawCallback, updateCallback) {
+        const state = {
+            time: 0,
+            delta: 0
+        };
+        function render(now) {
+            now *= 0.001;  // convert to seconds
+            state.delta = now - state.time;
+            state.time = now;
+            updateCallback(gl, state);
+            drawCallback(gl, state);
+            requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+    },
+    getProgramInfo(gl, shaderProgram){
+        return {
+            program: shaderProgram,
+                time: 0,
+            attribLocations: {
+            vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+        },
+            uniformLocations: {
+                projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+                    modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+            },
+        };
     }
 
 }

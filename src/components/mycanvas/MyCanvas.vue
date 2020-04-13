@@ -27,20 +27,7 @@
             const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
             const shaderProgram = webgl.initShaderProgram(gl, vertexShader, fragmentShader);
             gl.useProgram(shaderProgram);
-
-
-            const programInfo = {
-                program: shaderProgram,
-                attribLocations: {
-                    vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-                },
-                uniformLocations: {
-                    projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-                    modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
-                },
-            };
-
-
+            const programInfo = webgl.getProgramInfo(gl, shaderProgram);
 
             const fieldOfView = 45 * Math.PI / 180;   // in radians
             const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
@@ -54,17 +41,39 @@
                 zNear,
                 zFar);
 
-            let then = 0;
 
             let vertices = [
-                0,0,0,
-                0,0,1,
                 0,1,0,
-                0,1,1,
-                1,0,0,
-                1,0,1,
-                1,1,0,
-                1,1,1,
+                Math.sin((1.0/5)*2*Math.PI),0,Math.cos((1.0/5)*2*Math.PI),
+                Math.sin((2.0/5)*2*Math.PI),0,Math.cos((2.0/5)*2*Math.PI),
+                0,1,0,
+                Math.sin((2.0/5)*2*Math.PI),0,Math.cos((2.0/5)*2*Math.PI),
+                Math.sin((3.0/5)*2*Math.PI),0,Math.cos((3.0/5)*2*Math.PI),
+                0,1,0,
+                Math.sin((3.0/5)*2*Math.PI),0,Math.cos((3.0/5)*2*Math.PI),
+                Math.sin((4.0/5)*2*Math.PI),0,Math.cos((4.0/5)*2*Math.PI),
+                0,1,0,
+                Math.sin((4.0/5)*2*Math.PI),0,Math.cos((4.0/5)*2*Math.PI),
+                Math.sin((5.0/5)*2*Math.PI),0,Math.cos((5.0/5)*2*Math.PI),
+                0,1,0,
+                Math.sin((5.0/5)*2*Math.PI),0,Math.cos((5.0/5)*2*Math.PI),
+                Math.sin((1.0/5)*2*Math.PI),0,Math.cos((1.0/5)*2*Math.PI),
+                0,-1,0,
+                Math.sin((1.0/5)*2*Math.PI),0,Math.cos((1.0/5)*2*Math.PI),
+                Math.sin((2.0/5)*2*Math.PI),0,Math.cos((2.0/5)*2*Math.PI),
+                0,-1,0,
+                Math.sin((2.0/5)*2*Math.PI),0,Math.cos((2.0/5)*2*Math.PI),
+                Math.sin((3.0/5)*2*Math.PI),0,Math.cos((3.0/5)*2*Math.PI),
+                0,-1,0,
+                Math.sin((3.0/5)*2*Math.PI),0,Math.cos((3.0/5)*2*Math.PI),
+                Math.sin((4.0/5)*2*Math.PI),0,Math.cos((4.0/5)*2*Math.PI),
+                0,-1,0,
+                Math.sin((4.0/5)*2*Math.PI),0,Math.cos((4.0/5)*2*Math.PI),
+                Math.sin((5.0/5)*2*Math.PI),0,Math.cos((5.0/5)*2*Math.PI),
+                0,-1,0,
+                Math.sin((5.0/5)*2*Math.PI),0,Math.cos((5.0/5)*2*Math.PI),
+                Math.sin((1.0/5)*2*Math.PI),0,Math.cos((1.0/5)*2*Math.PI),
+
             ];
 
             let vertex_buffer = gl.createBuffer();
@@ -74,29 +83,27 @@
             let that = this;
             let modelViewMatrix = glm.mat4.create();
 
-
-            // eslint-disable-next-line no-unused-vars
-            function drawScene(gl, programInfo, deltaTime, now) {
-                cleanScene(gl);
-
+            function update(gl, state) {
                 let distance = 5;
-                let center = glm.vec3.fromValues(0.5,0.5,0.5);
-                let up = glm.vec3.fromValues(0,0,1);
-                let eye = glm.vec3.fromValues(distance * Math.sin(now), distance * Math.cos(now) , distance);
+                let center = glm.vec3.fromValues(0,0,0);
+                let up = glm.vec3.fromValues(0,1,0);
+                let eye = glm.vec3.fromValues(distance * Math.sin(state.time), distance, distance * Math.cos(state.time) );
                 glm.mat4.lookAt(that.viewMatrix, eye, center, up);
-
 
                 glm.mat4.multiply(modelViewMatrix, that.viewMatrix, that.modelMatrix);
                 gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, that.projectionMatrix);
                 gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, modelViewMatrix);
+            }
 
-                console.log(that.projectionMatrix);
+            // eslint-disable-next-line no-unused-vars
+            function draw(gl, state) {
+                cleanScene(gl);
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 
-                gl.drawArrays(gl.POINTS, 0, vertices.length/3);
+                gl.drawArrays(gl.LINE_LOOP, 0, vertices.length/3);
 
             }
 
@@ -107,14 +114,7 @@
                 gl.viewport(0,0,canvas.width,canvas.height);
             }
 
-            function render(now) {
-                now *= 0.001;  // convert to seconds
-                const deltaTime = now - then;
-                then = now;
-                drawScene(gl, programInfo, deltaTime, now);
-                requestAnimationFrame(render);
-            }
-            requestAnimationFrame(render);
+            webgl.loop(gl, draw, update);
         },
     }
 </script>
