@@ -46,40 +46,36 @@
                 0,1,0,
                 Math.sin((1.0/5)*2*Math.PI),0,Math.cos((1.0/5)*2*Math.PI),
                 Math.sin((2.0/5)*2*Math.PI),0,Math.cos((2.0/5)*2*Math.PI),
-                0,1,0,
-                Math.sin((2.0/5)*2*Math.PI),0,Math.cos((2.0/5)*2*Math.PI),
                 Math.sin((3.0/5)*2*Math.PI),0,Math.cos((3.0/5)*2*Math.PI),
-                0,1,0,
-                Math.sin((3.0/5)*2*Math.PI),0,Math.cos((3.0/5)*2*Math.PI),
-                Math.sin((4.0/5)*2*Math.PI),0,Math.cos((4.0/5)*2*Math.PI),
-                0,1,0,
-                Math.sin((4.0/5)*2*Math.PI),0,Math.cos((4.0/5)*2*Math.PI),
-                Math.sin((5.0/5)*2*Math.PI),0,Math.cos((5.0/5)*2*Math.PI),
-                0,1,0,
-                Math.sin((5.0/5)*2*Math.PI),0,Math.cos((5.0/5)*2*Math.PI),
-                Math.sin((1.0/5)*2*Math.PI),0,Math.cos((1.0/5)*2*Math.PI),
-                0,-1,0,
-                Math.sin((1.0/5)*2*Math.PI),0,Math.cos((1.0/5)*2*Math.PI),
-                Math.sin((2.0/5)*2*Math.PI),0,Math.cos((2.0/5)*2*Math.PI),
-                0,-1,0,
-                Math.sin((2.0/5)*2*Math.PI),0,Math.cos((2.0/5)*2*Math.PI),
-                Math.sin((3.0/5)*2*Math.PI),0,Math.cos((3.0/5)*2*Math.PI),
-                0,-1,0,
-                Math.sin((3.0/5)*2*Math.PI),0,Math.cos((3.0/5)*2*Math.PI),
-                Math.sin((4.0/5)*2*Math.PI),0,Math.cos((4.0/5)*2*Math.PI),
-                0,-1,0,
                 Math.sin((4.0/5)*2*Math.PI),0,Math.cos((4.0/5)*2*Math.PI),
                 Math.sin((5.0/5)*2*Math.PI),0,Math.cos((5.0/5)*2*Math.PI),
                 0,-1,0,
-                Math.sin((5.0/5)*2*Math.PI),0,Math.cos((5.0/5)*2*Math.PI),
-                Math.sin((1.0/5)*2*Math.PI),0,Math.cos((1.0/5)*2*Math.PI),
+            ];
 
+            const indices = [
+                0,  1,  2,
+                0,  2,  3,
+                0,  3,  4,
+                0,  4,  5,
+                0,  5,  1,
+
+                6,  1,  2,
+                6,  2,  3,
+                6,  3,  4,
+                6,  4,  5,
+                6,  5,  1,
             ];
 
             let vertex_buffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+            let index_buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
             let that = this;
             let modelViewMatrix = glm.mat4.create();
 
@@ -103,8 +99,9 @@
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 
-                gl.drawArrays(gl.LINE_LOOP, 0, vertices.length/3);
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
 
+                gl.drawElements(gl.LINES, indices.length, gl.UNSIGNED_SHORT, 0);
             }
 
             function cleanScene(gl) {
