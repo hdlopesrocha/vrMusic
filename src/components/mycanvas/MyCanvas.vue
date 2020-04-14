@@ -1,13 +1,17 @@
 <template>
-    <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
+    <div>
+        <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
+        <button v-on:click="enableVr">VR</button>
+    </div>
 </template>
 
 <script>
     import vertexShader from 'raw-loader!./shader.vert';
     import fragmentShader from 'raw-loader!./shader.frag';
+    import model from 'raw-loader!../../assets/models/monkey.gltf';
+
     import webgl from '../../utils/webgl';
     import * as glm from 'gl-matrix'
-    import model from 'url-loader!../../assets/models/monkey.gltf';
     import GLTFLoader from 'three-gltf-loader';
 
 
@@ -17,11 +21,17 @@
         data() {
             return {
                 canvasWidth: 1920,
-                canvasHeight: 1080,
+                canvasHeight: 800,
                 projectionMatrix: glm.mat4.create(),
                 viewMatrix: glm.mat4.create(),
                 worldMatrix: glm.mat4.create(),
                 modelMatrix: glm.mat4.create(),
+                state: webgl.createState
+            }
+        },
+        methods: {
+            enableVr() {
+                webgl.enableVr(this.state);
             }
         },
         mounted() {
@@ -31,95 +41,70 @@
             gl.useProgram(shaderProgram);
             const programInfo = webgl.getProgramInfo(gl, shaderProgram);
 
-            const fieldOfView = 45 * Math.PI / 180;   // in radians
-            const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-            const zNear = 0.1;
-            const zFar = 100.0;
+            glm.mat4.perspective(this.projectionMatrix, 45 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 100.0);
 
-            glm.mat4.perspective(this.projectionMatrix, fieldOfView, aspect, zNear, zFar);
-
-            let vertices = [];
-            let normals = [];
-            let indices = [];
-
-            let vertex_buffer = gl.createBuffer();
-            let normal_buffer = gl.createBuffer();
-            let index_buffer = gl.createBuffer();
+            let models = [];
 
             const loader = new GLTFLoader();
-            loader.load(model,
+            //console.log(model);
+            loader.parse(model, "",
                 ( gltf ) => {
-                    // called when the resource is loaded
-                    console.log(gltf);
-                    vertices = gltf.scene.children[0].geometry.attributes.position.array;
-                    normals =  gltf.scene.children[0].geometry.attributes.normal.array;
-                    indices = gltf.scene.children[0].geometry.index.array;
-
-                    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-                    gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-                    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-                    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-
-                },
-                ( xhr ) => {
-                    // called while loading is progressing
-                    console.log( `${( xhr.loaded / xhr.total * 100 )}% loaded` );
-                },
-                ( error ) => {
-                    // called when loading has errors
-                    console.error( 'An error happened', error );
-                },
+                    let group = [];
+                    for(let c of gltf.scene.children) {
+                        group.push(webgl.getMesh(gl, c.geometry));
+                    }
+                    models.push(group);
+                }
             );
 
-            console.log(vertices);
-            console.log(indices);
-
-
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
             let that = this;
-            let modelViewMatrix = glm.mat4.create();
+            let viewMatrix = glm.mat4.create();
+            let modelMatrix = glm.mat4.create();
 
+
+            // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
-                let distance = 5;
+                let distance = 2;
                 let center = glm.vec3.fromValues(0, 0, 0);
                 let up = glm.vec3.fromValues(0, 1, 0);
-                let eye = glm.vec3.fromValues(distance * Math.sin(state.time), distance, distance * Math.cos(state.time));
+                let eye = glm.vec3.fromValues(0 , 0, distance);
                 glm.mat4.lookAt(that.viewMatrix, eye, center, up);
+                glm.mat4.multiply(viewMatrix, that.viewMatrix, that.modelMatrix);
 
-                glm.mat4.multiply(modelViewMatrix, that.viewMatrix, that.modelMatrix);
+                glm.mat4.identity(modelMatrix);
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, 0 ,-1.5));
+                glm.mat4.rotateY(modelMatrix, modelMatrix, state.time);
+
                 gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, that.projectionMatrix);
-                gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, modelViewMatrix);
+                gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
+                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
             }
 
             // eslint-disable-next-line no-unused-vars
-            function draw(gl, state) {
-                cleanScene(gl);
+            function draw(gl, state, viewMatrix, projectionMatrix) {
+                if(viewMatrix != null) {
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
+                }
+                if(projectionMatrix != null) {
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
+                }
 
-                gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-                gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
-                gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 
-                gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
-                gl.vertexAttribPointer(programInfo.attribLocations.vertexNormal, 3, gl.FLOAT, false, 0, 0);
-                gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
-
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-
-                gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+                for(let model of models) {
+                    for(let mesh of model) {
+                        webgl.drawMesh(gl, programInfo, mesh);
+                    }
+                }
             }
 
-            function cleanScene(gl) {
-                gl.clearColor(0.2, 0.2, 0.2, 1.0);
+            function clean(gl) {
+                gl.clearColor(0.1, 0.1, 0.1, 1.0);
                 gl.enable(gl.DEPTH_TEST);
                 gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.viewport(0, 0, canvas.width, canvas.height);
             }
 
-            webgl.loop(gl, draw, update);
+            webgl.loop(gl, this.state, canvas, clean, draw, update);
         },
     }
 </script>
@@ -127,5 +112,8 @@
 <style scoped>
     canvas {
         width: 100%;
+    }
+    button {
+        padding: 10px;
     }
 </style>

@@ -1,17 +1,17 @@
+precision mediump float;
 attribute vec4 aVertexPosition;
 attribute vec3 aVertexNormal;
 
-uniform mat4 uModelViewMatrix;
+uniform mat4 uViewMatrix;
 uniform mat4 uProjectionMatrix;
+uniform mat4 uModelMatrix;
 
-varying lowp vec4 vColor;
+varying vec3 vNormal;
 
 void main(void) {
-    vec3 lightDirection = vec3(0.0, 0.0, 1.0);
-
-  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+    mat4 mvp = uProjectionMatrix * uViewMatrix * uModelMatrix;
+  gl_Position = mvp *aVertexPosition;
   gl_PointSize = 10.0;
+  vNormal = aVertexNormal;
 
-    float dotFactor = dot(aVertexNormal, lightDirection);
-  vColor = vec4(vec3(dotFactor),1.0);
 }
