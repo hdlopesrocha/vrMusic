@@ -8,7 +8,8 @@
 <script>
     import vertexShader from 'raw-loader!./shader.vert';
     import fragmentShader from 'raw-loader!./shader.frag';
-    import model from 'raw-loader!../../assets/models/monkey.gltf';
+    import monkeyModel from 'raw-loader!../../assets/models/monkey.gltf';
+    import spaceModel from 'raw-loader!../../assets/models/space.gltf';
 
     import webgl from '../../utils/webgl';
     import * as glm from 'gl-matrix'
@@ -43,24 +44,29 @@
             const programInfo = webgl.getProgramInfo(gl, shaderProgram);
 
 
-            let models = [];
+            let monkeyMesh = [];
+            let spaceMesh = [];
 
             const loader = new GLTFLoader();
             //console.log(model);
-            loader.parse(model, "",  gltf  => {
-                console.log(gltf);
+            loader.parse(monkeyModel, "", gltf  => {
                 let group = [];
                 for (let c of gltf.scene.children) {
                     group.push(webgl.getMesh(gl, c));
                 }
-                models.push(group);
+                monkeyMesh.push(group);
             });
-
+            loader.parse(spaceModel, "", gltf  => {
+                let group = [];
+                for (let c of gltf.scene.children) {
+                    group.push(webgl.getMesh(gl, c));
+                }
+                spaceMesh.push(group);
+            });
 
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
                 let viewMatrix = glm.mat4.create();
-                let modelMatrix = glm.mat4.create();
                 let projectionMatrix = glm.mat4.create();
                 let center = glm.vec3.fromValues(0, 0, -1);
                 let up = glm.vec3.fromValues(0, 1, 0);
@@ -68,13 +74,8 @@
                 glm.mat4.lookAt(viewMatrix, eye, center, up);
                 glm.mat4.perspective(projectionMatrix, 45 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 1000.0);
 
-                glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, 0 ,-5));
-                glm.mat4.rotateY(modelMatrix, modelMatrix, state.time);
-
                 gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
                 gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
-                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
             }
 
             // eslint-disable-next-line no-unused-vars
@@ -86,8 +87,26 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
                 }
 
+                let modelMatrix = glm.mat4.create();
 
-                for(let model of models) {
+                glm.mat4.identity(modelMatrix);
+                glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(400,400,400));
+                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                gl.disable(gl.DEPTH_TEST);
+                for(let model of spaceMesh) {
+                    for(let mesh of model) {
+                        webgl.drawMesh(gl, programInfo, mesh);
+                    }
+                }
+
+                glm.mat4.identity(modelMatrix);
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, 0 ,-5));
+                glm.mat4.rotateY(modelMatrix, modelMatrix, state.time);
+                gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
+                gl.enable(gl.DEPTH_TEST);
+                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                for(let model of monkeyMesh) {
                     for(let mesh of model) {
                         webgl.drawMesh(gl, programInfo, mesh);
                     }
