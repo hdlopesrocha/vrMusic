@@ -1,5 +1,6 @@
 precision mediump float;
 varying vec3 vNormal;
+varying vec2 vTextureCoordinates;
 
 void main(void) {
   vec3 lightDirection = vec3(0.0, 0.0, 1.0);

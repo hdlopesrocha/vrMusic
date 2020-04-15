@@ -97,7 +97,9 @@ export default {
             });
             session.requestReferenceSpace('local').then(space => {
                 state.vrSession = session;
-                state.vrSpace = space;
+                console.log(space);
+                // state.vrSpace =  space.getOffsetReferenceSpace(new XRRigidTransform(glm.vec3.fromValues(0,-1.60,0), glm.quat.create()) );
+                state.vrSpace =  space;
                 state.animation = session.requestAnimationFrame(render);
             });
             console.log(session);
@@ -109,10 +111,8 @@ export default {
             new WebXRPolyfill();
             if (navigator.xr) {
                 navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
-
                     state.vrSupported = supported;
                     navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
-
                 });
             }
         }
@@ -138,9 +138,9 @@ export default {
             program: shaderProgram,
                 time: 0,
             attribLocations: {
-            vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+                vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
                 vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
-
+                textureCoordinates: gl.getAttribLocation(shaderProgram, 'aTextureCoordinates'),
             },
             uniformLocations: {
                 projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
@@ -152,23 +152,30 @@ export default {
     getMesh(gl, geometry){
         let vertices = geometry.attributes.position.array;
         let normals =  geometry.attributes.normal.array;
+        let texture_coordinates =  geometry.attributes.uv.array;
         let indices = geometry.index.array;
         let indices_count = indices.length;
+
+        console.log(geometry);
 
         let vertex_buffer = gl.createBuffer();
         let normal_buffer = gl.createBuffer();
         let index_buffer = gl.createBuffer();
+        let texture_coordinates_buffer = gl.createBuffer();
 
         gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
         gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, texture_coordinates_buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texture_coordinates), gl.STATIC_DRAW);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
         return  {
             ic: indices_count,
             vb: vertex_buffer,
             nb: normal_buffer,
+            tb: texture_coordinates_buffer,
             ib: index_buffer
         };
     },
@@ -180,6 +187,10 @@ export default {
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.nb);
         gl.vertexAttribPointer(programInfo.attribLocations.vertexNormal, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, mesh.tb);
+        gl.vertexAttribPointer(programInfo.attribLocations.textureCoordinates, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(programInfo.attribLocations.textureCoordinates);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ib);
 

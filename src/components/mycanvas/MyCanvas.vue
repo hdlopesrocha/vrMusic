@@ -1,9 +1,7 @@
 <template>
     <div>
         <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
-        <br><button v-on:click="enableVr">VR</button><button v-on:click="enableDraw">No VR</button>
-        <br>
-        {{state ? state.log: ''}}
+        <br><button v-on:click="enableVr">VR</button>
     </div>
 </template>
 
@@ -32,9 +30,6 @@
             enableVr() {
                 webgl.loopVr(this.gl, this.state);
             },
-            enableDraw() {
-                webgl.loop(this.gl, this.state);
-            }
         },
         mounted() {
             const canvas = document.querySelector('#glcanvas');
@@ -72,7 +67,7 @@
                 let up = glm.vec3.fromValues(0, 1, 0);
                 let eye = glm.vec3.fromValues(0 , 0, 0);
                 glm.mat4.lookAt(viewMatrix, eye, center, up);
-                glm.mat4.perspective(projectionMatrix, 45 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 100.0);
+                glm.mat4.perspective(projectionMatrix, 45 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 1000.0);
 
                 glm.mat4.identity(modelMatrix);
                 glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, 0 ,-5));
@@ -108,6 +103,8 @@
             }
 
             this.state = webgl.createState(clean, draw, update);
+            webgl.loop(this.gl, this.state);
+
         },
     }
 </script>
