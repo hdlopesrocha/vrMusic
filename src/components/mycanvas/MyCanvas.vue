@@ -8,8 +8,6 @@
 <script>
     import vertexShader from 'raw-loader!./shader.vert';
     import fragmentShader from 'raw-loader!./shader.frag';
-    import monkeyModel from 'raw-loader!../../assets/models/monkey.gltf';
-    import spaceModel from 'raw-loader!../../assets/models/space.gltf';
 
     import webgl from '../../utils/webgl';
     import * as glm from 'gl-matrix'
@@ -49,14 +47,14 @@
 
             const loader = new GLTFLoader();
             //console.log(model);
-            loader.parse(monkeyModel, "", gltf  => {
+            loader.load("models/monkey.gltf", gltf  => {
                 let group = [];
                 for (let c of gltf.scene.children) {
                     group.push(webgl.getMesh(gl, c));
                 }
                 monkeyMesh.push(group);
             });
-            loader.parse(spaceModel, "", gltf  => {
+            loader.load("models/space.gltf", gltf  => {
                 let group = [];
                 for (let c of gltf.scene.children) {
                     group.push(webgl.getMesh(gl, c));
