@@ -47,15 +47,14 @@
 
             const loader = new GLTFLoader();
             //console.log(model);
-            loader.parse(model, "",
-                ( gltf ) => {
-                    let group = [];
-                    for(let c of gltf.scene.children) {
-                        group.push(webgl.getMesh(gl, c.geometry));
-                    }
-                    models.push(group);
+            loader.parse(model, "",  gltf  => {
+                console.log(gltf);
+                let group = [];
+                for (let c of gltf.scene.children) {
+                    group.push(webgl.getMesh(gl, c));
                 }
-            );
+                models.push(group);
+            });
 
 
             // eslint-disable-next-line no-unused-vars

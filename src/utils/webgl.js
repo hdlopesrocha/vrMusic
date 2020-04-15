@@ -3,7 +3,7 @@ import WebXRPolyfill from "webxr-polyfill";
 
 export default {
 
-    initShaderProgram(gl, vsSource, fsSource) {
+    initShaderProgram: function(gl, vsSource, fsSource) {
         const vertexShader = this.loadShader(gl, gl.VERTEX_SHADER, vsSource);
         const fragmentShader = this.loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
 
@@ -19,7 +19,7 @@ export default {
 
         return shaderProgram;
     },
-    loadShader(gl, type, source) {
+    loadShader: function(gl, type, source) {
         const shader = gl.createShader(type);
 
         gl.shaderSource(shader, source);
@@ -33,7 +33,7 @@ export default {
 
         return shader;
     },
-    createState(cleanDrawback, drawCallback, updateCallback) {
+    createState: function(cleanDrawback, drawCallback, updateCallback) {
         return  {
             time: 0,
             delta: 0,
@@ -53,7 +53,7 @@ export default {
             log: '',
         };
     },
-    loopVr(gl, state) {
+    loopVr: function(gl, state) {
         function render(now, frame) {
 
             let session = frame.session;
@@ -117,9 +117,7 @@ export default {
             }
         }
     },
-
-
-    loop(gl, state) {
+    loop: function(gl, state) {
 
         function render(now) {
             state.tick(now);
@@ -133,7 +131,7 @@ export default {
 
         state.animation = requestAnimationFrame(render);
     },
-    getProgramInfo(gl, shaderProgram){
+    getProgramInfo: function(gl, shaderProgram){
         return {
             program: shaderProgram,
                 time: 0,
@@ -146,17 +144,19 @@ export default {
                 projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
                 viewMatrix: gl.getUniformLocation(shaderProgram, 'uViewMatrix'),
                 modelMatrix: gl.getUniformLocation(shaderProgram, 'uModelMatrix'),
+                uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
             },
         };
     },
-    getMesh(gl, geometry){
+    getMesh: function(gl, mesh){
+        let geometry = mesh.geometry;
+
         let vertices = geometry.attributes.position.array;
         let normals =  geometry.attributes.normal.array;
         let texture_coordinates =  geometry.attributes.uv.array;
         let indices = geometry.index.array;
         let indices_count = indices.length;
-
-        console.log(geometry);
+        let image = mesh.material.map.image;
 
         let vertex_buffer = gl.createBuffer();
         let normal_buffer = gl.createBuffer();
@@ -176,10 +176,13 @@ export default {
             vb: vertex_buffer,
             nb: normal_buffer,
             tb: texture_coordinates_buffer,
-            ib: index_buffer
+            ib: index_buffer,
+            im: this.loadImage(gl, image)
         };
     },
-    drawMesh(gl, programInfo, mesh) {
+    drawMesh: function(gl, programInfo, mesh) {
+
+
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vb);
         gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
@@ -194,9 +197,57 @@ export default {
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ib);
 
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, mesh.im);
+        gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+
         gl.drawElements(gl.TRIANGLES, mesh.ic, gl.UNSIGNED_SHORT, 0);
     },
-    enableVr(state) {
+    enableVr: function(state) {
         state.vrInit = true;
-    }
+    },
+    isPowerOf2: function(value) {
+        return (value & (value - 1)) === 0;
+    },
+    loadImage: function(gl, image){
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+
+        // Because images have to be download over the internet
+        // they might take a moment until they are ready.
+        // Until then put a single pixel in the texture so we can
+        // use it immediately. When the image has finished downloading
+        // we'll update the texture with the contents of the image.
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const width = 1;
+        const height = 1;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+            width, height, border, srcFormat, srcType,
+            pixel);
+
+        console.log("loaded tex");
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+            srcFormat, srcType, image);
+
+        // WebGL1 has different requirements for power of 2 images
+        // vs non power of 2 images so check if the image is a
+        // power of 2 in both dimensions.
+        if (this.isPowerOf2(image.width) && this.isPowerOf2(image.height)) {
+            // Yes, it's a power of 2. Generate mips.
+            gl.generateMipmap(gl.TEXTURE_2D);
+        } else {
+            // No, it's not a power of 2. Turn off mips and set
+            // wrapping to clamp to edge
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        }
+        return texture;
+    },
 }
