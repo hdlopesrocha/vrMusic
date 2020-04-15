@@ -1,7 +1,9 @@
 <template>
     <div>
         <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
-        <button v-on:click="enableVr">VR</button>
+        <br><button v-on:click="enableVr">VR</button><button v-on:click="enableDraw">No VR</button>
+        <br>
+        {{state ? state.log: ''}}
     </div>
 </template>
 
@@ -20,28 +22,31 @@
 
         data() {
             return {
-                canvasWidth: 1920,
-                canvasHeight: 800,
-                projectionMatrix: glm.mat4.create(),
-                viewMatrix: glm.mat4.create(),
-                worldMatrix: glm.mat4.create(),
-                modelMatrix: glm.mat4.create(),
-                state: webgl.createState
+                canvasWidth: 800,
+                canvasHeight: 600,
+                state: null,
+                gl: null
             }
         },
         methods: {
             enableVr() {
-                webgl.enableVr(this.state);
+                webgl.loopVr(this.gl, this.state);
+            },
+            enableDraw() {
+                webgl.loop(this.gl, this.state);
             }
         },
         mounted() {
             const canvas = document.querySelector('#glcanvas');
-            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            const gl = canvas.getContext('webgl',  { xrCompatible: true });
+            this.gl = gl;
+            canvas.addEventListener("contextmenu", (event) => { event.preventDefault(); });
+
+
             const shaderProgram = webgl.initShaderProgram(gl, vertexShader, fragmentShader);
             gl.useProgram(shaderProgram);
             const programInfo = webgl.getProgramInfo(gl, shaderProgram);
 
-            glm.mat4.perspective(this.projectionMatrix, 45 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 100.0);
 
             let models = [];
 
@@ -58,25 +63,22 @@
             );
 
 
-            let that = this;
-            let viewMatrix = glm.mat4.create();
-            let modelMatrix = glm.mat4.create();
-
-
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
-                let distance = 2;
-                let center = glm.vec3.fromValues(0, 0, 0);
+                let viewMatrix = glm.mat4.create();
+                let modelMatrix = glm.mat4.create();
+                let projectionMatrix = glm.mat4.create();
+                let center = glm.vec3.fromValues(0, 0, -1);
                 let up = glm.vec3.fromValues(0, 1, 0);
-                let eye = glm.vec3.fromValues(0 , 0, distance);
-                glm.mat4.lookAt(that.viewMatrix, eye, center, up);
-                glm.mat4.multiply(viewMatrix, that.viewMatrix, that.modelMatrix);
+                let eye = glm.vec3.fromValues(0 , 0, 0);
+                glm.mat4.lookAt(viewMatrix, eye, center, up);
+                glm.mat4.perspective(projectionMatrix, 45 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 100.0);
 
                 glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, 0 ,-1.5));
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, 0 ,-5));
                 glm.mat4.rotateY(modelMatrix, modelMatrix, state.time);
 
-                gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, that.projectionMatrix);
+                gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
                 gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
                 gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
             }
@@ -98,21 +100,20 @@
                 }
             }
 
-            function clean(gl) {
+            // eslint-disable-next-line no-unused-vars
+            function clean(gl, state) {
                 gl.clearColor(0.1, 0.1, 0.1, 1.0);
                 gl.enable(gl.DEPTH_TEST);
-                gl.clear(gl.COLOR_BUFFER_BIT);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             }
 
-            webgl.loop(gl, this.state, canvas, clean, draw, update);
+            this.state = webgl.createState(clean, draw, update);
         },
     }
 </script>
 
 <style scoped>
-    canvas {
-        width: 100%;
-    }
+
     button {
         padding: 10px;
     }

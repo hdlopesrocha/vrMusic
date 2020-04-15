@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "serve": "vue-cli-service serve --https true",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
@@ -15,7 +15,8 @@
     "three": "^0.115.0",
     "three-gltf-loader": "^1.111.0",
     "vue": "^2.6.11",
-    "webvr-polyfill": "^0.10.11"
+    "webvr-polyfill": "^0.10.11",
+    "webxr-polyfill": "^2.0.2"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.3.0",

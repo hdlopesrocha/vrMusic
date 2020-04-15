@@ -1,4 +1,5 @@
-import WebVRPolyfill from 'webvr-polyfill';
+// eslint-disable-next-line no-unused-vars
+import WebXRPolyfill from "webxr-polyfill";
 
 export default {
 
@@ -32,73 +33,105 @@ export default {
 
         return shader;
     },
-    createState() {
-        return {
+    createState(cleanDrawback, drawCallback, updateCallback) {
+        return  {
             time: 0,
             delta: 0,
-            vrDisplay: null,
             vrInitialized: false,
-            vrInit: false
+            vrSession: null,
+            vrSpace: null,
+            animation: null,
+            cleanDrawback: cleanDrawback,
+            drawCallback: drawCallback,
+            updateCallback: updateCallback,
+            vrSupported: false,
+            tick: function(now){
+                now *= 0.001;  // convert to seconds
+                this.delta = now - this.time;
+                this.time = now;
+            },
+            log: '',
         };
     },
-    loop(gl, state, canvas, cleanDrawback, drawCallback, updateCallback) {
+    loopVr(gl, state) {
+        function render(now, frame) {
 
-        function render(now) {
-            if(!state.vrInitialized && state.vrInit) {
-                new WebVRPolyfill();
-                if (navigator.getVRDisplays) {
-                    navigator.getVRDisplays().then(displays => {
-                        console.log(displays);
-                        if (displays.length) {
-                            let display = displays[0];
-                            display = displays[0];
-                            display.depthNear = 0.1;
-                            display.depthFar = 100;
-                            state.vrDisplay = display;
-                            state.vrInitialized = true;
-                            display.requestPresent([{ source: canvas }]);
-                        }
-                    });
+            let session = frame.session;
+            state.animation = session.requestAnimationFrame(render);
+
+
+            let pose = null;
+            if (state.vrSpace && frame) {
+                pose = frame.getViewerPose(state.vrSpace);
+            }
+
+            state.tick(now);
+            state.cleanDrawback(gl, state);
+            state.updateCallback(gl, state);
+
+
+            if (pose) {
+                let layer = session ? session.renderState.baseLayer : null;
+                gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+
+                for (let view of pose.views) {
+                    let viewport = layer.getViewport(view);
+                    gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+                    state.drawCallback(gl, state, view.transform.inverse.matrix, view.projectionMatrix);
+                    state.log = JSON.stringify(view.transform.matrix) + ":" + now;
+
                 }
-            }
-            if (state.vrDisplay && state.vrDisplay.isPresenting) {
-                const eye = state.vrDisplay.getEyeParameters("left");
-                canvas.width = eye.renderWidth * 2;
-                canvas.height = eye.renderHeight;
-            }
-
-
-            now *= 0.001;  // convert to seconds
-            state.delta = now - state.time;
-            state.time = now;
-            updateCallback(gl, state);
-            cleanDrawback(gl);
-            if(state.vrDisplay && state.vrDisplay.isPresenting) {
-                // eslint-disable-next-line no-undef
-                let frameData = new VRFrameData();
-                state.vrDisplay.getFrameData(frameData);
-
-                gl.viewport(0, 0, canvas.width / 2, canvas.height);
-
-                drawCallback(gl, state, frameData.leftViewMatrix, frameData.leftProjectionMatrix);
-
-                gl.viewport(canvas.width / 2, 0, canvas.width / 2, canvas.height);
-                drawCallback(gl, state, frameData.rightViewMatrix, frameData.rightProjectionMatrix);
-
-                state.vrDisplay.submitFrame();
-            } else {
-                gl.viewport(0, 0, canvas.width, canvas.height);
-                drawCallback(gl, state, null, null);
-            }
-
-            if(state.vrDisplay) {
-                state.vrDisplay.requestAnimationFrame(render);
-            } else {
-                requestAnimationFrame(render);
             }
         }
 
-        requestAnimationFrame(render);
+        // eslint-disable-next-line no-unused-vars
+        function onSessionEnded(event) {
+
+        }
+
+        function onSessionStarted(session) {
+            session.addEventListener('end', onSessionEnded);
+            session.updateRenderState({
+                // eslint-disable-next-line no-undef
+                baseLayer: new XRWebGLLayer(session, gl)
+            });
+            session.requestReferenceSpace('local').then(space => {
+                state.vrSession = session;
+                state.vrSpace = space;
+                state.animation = session.requestAnimationFrame(render);
+            });
+            console.log(session);
+            return session;
+        }
+
+        if(!state.vrInitialized) {
+            state.vrInitialized = true;
+            new WebXRPolyfill();
+            if (navigator.xr) {
+                navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+
+                    state.vrSupported = supported;
+                    navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
+
+                });
+            }
+        }
+    },
+
+
+    loop(gl, state) {
+
+        function render(now) {
+            state.tick(now);
+            state.cleanDrawback(gl, state);
+            state.updateCallback(gl, state);
+
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            state.drawCallback(gl, state, null, null);
+            state.animation = requestAnimationFrame(render);
+        }
+
+        state.animation = requestAnimationFrame(render);
     },
     getProgramInfo(gl, shaderProgram){
         return {
