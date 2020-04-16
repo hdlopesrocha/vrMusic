@@ -1,13 +1,15 @@
 #version 300 es
 precision highp float;
+precision highp int;
 
+uniform int uDrawMode;
 uniform sampler2D uSampler;
 uniform bool uEnableLight;
-uniform int uDrawMode;
 uniform float uTime;
 
 in vec3 vNormal;
 in vec2 vTextureCoordinates;
+in vec4 vColor;
 
 out vec4 fragColor;
 
@@ -27,14 +29,9 @@ void main(void) {
     float pc = clamp(pr*n+pr*0.25, 0.0, 1.0);
     color = vec4(1.0, pc*2.0, 0.0,pc);
   } else if(uDrawMode == 2) {
-    float cx = vTextureCoordinates.x;
-    float cy = cos(vTextureCoordinates.y*PI);
-    float cz = uTime*0.1;
-
-    float nx = noise(vec4(cx,cy,cz, 0.0));
-    float ny = noise(vec4(0.0, cx,cy,cz));
-    float nz = noise(vec4(cx,cy, 0.0, cz));
-
+    float nx = vColor.x;
+    float ny = vColor.y;
+    float nz = vColor.z;
 
     vec4 c = texture(uSampler, vTextureCoordinates+vec2(-1.0,0.0)*uTime*0.5+vec2(nx,ny)*0.2);
 

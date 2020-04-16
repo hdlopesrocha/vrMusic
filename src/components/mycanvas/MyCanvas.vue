@@ -40,8 +40,9 @@
             });
 
             let fShader = fragmentShader.replace("//#PERLIN", perlinShader);
+            let vShader = vertexShader.replace("//#PERLIN", perlinShader);
 
-            const shaderProgram = webgl.initShaderProgram(gl, vertexShader, fShader);
+            const shaderProgram = webgl.initShaderProgram(gl, vShader, fShader);
             gl.useProgram(shaderProgram);
             const programInfo = webgl.getProgramInfo(gl, shaderProgram);
 
