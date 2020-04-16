@@ -40,41 +40,60 @@
             });
 
             let fShader = fragmentShader.replace("//#PERLIN", perlinShader);
-            console.log(fShader);
 
             const shaderProgram = webgl.initShaderProgram(gl, vertexShader, fShader);
             gl.useProgram(shaderProgram);
             const programInfo = webgl.getProgramInfo(gl, shaderProgram);
 
-
-            let monkeyMesh = [];
+            let mandalaMesh = [];
+            let modelMesh = [];
             let spaceMesh = [];
             let billboardMesh = [];
 
             const loader = new GLTFLoader();
             //console.log(model);
-            loader.load("models/monkey.gltf", gltf => {
+            loader.load("models/ganesha.gltf", gltf => {
+                console.log("loading G...");
                 let group = [];
                 for (let c of gltf.scene.children) {
-                    group.push(webgl.getMesh(gl, c));
+                    let m = webgl.getMesh(gl, c);
+                    if(m!=null) {
+                        group.push(m);
+                    }
                 }
-                monkeyMesh.push(group);
+                modelMesh.push(group);
+                console.log("loaded G!");
             });
             loader.load("models/space.gltf", gltf => {
                 let group = [];
                 for (let c of gltf.scene.children) {
-                    group.push(webgl.getMesh(gl, c));
+                    let m = webgl.getMesh(gl, c);
+                    if(m!=null) {
+                        group.push(m);
+                    }
                 }
                 spaceMesh.push(group);
             });
             loader.load("models/billboard.gltf", gltf => {
                 let group = [];
                 for (let c of gltf.scene.children) {
-                    group.push(webgl.getMesh(gl, c));
+                    let m = webgl.getMesh(gl, c);
+                    if(m!=null) {
+                        group.push(m);
+                    }
                 }
                 billboardMesh.push(group);
             });
-
+            loader.load("models/mandala.gltf", gltf => {
+                let group = [];
+                for (let c of gltf.scene.children) {
+                    let m = webgl.getMesh(gl, c);
+                    if(m!=null) {
+                        group.push(m);
+                    }
+                }
+                mandalaMesh.push(group);
+            });
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
 
@@ -124,8 +143,8 @@
                 // Draw model
                 // **********
                 glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-2, 0, -7));
-                glm.mat4.rotateY(modelMatrix, modelMatrix, state.time);
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-10, -2, 0));
+                glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI);
                 gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
                 gl.uniform1i(programInfo.uniformLocations.drawMode, 0);
 
@@ -133,12 +152,30 @@
                 gl.enable(gl.CULL_FACE);
 
                 gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                for (let model of monkeyMesh) {
+                for (let model of modelMesh) {
                     for (let mesh of model) {
                         webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
 
+
+                // ************
+                // Draw mandala
+                // ************
+                glm.mat4.identity(modelMatrix);
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-10, -4.2, 0));
+                glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
+                glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time*0.1);
+                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                gl.uniform1i(programInfo.uniformLocations.drawMode, 0);
+                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                gl.enable(gl.DEPTH_TEST);
+                gl.disable(gl.CULL_FACE);
+                for (let model of mandalaMesh) {
+                    for (let mesh of model) {
+                        webgl.drawMesh(gl, programInfo, mesh);
+                    }
+                }
 
                 // **************
                 // Draw billboard

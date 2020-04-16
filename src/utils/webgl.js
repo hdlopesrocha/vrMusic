@@ -154,8 +154,11 @@ export default {
             },
         };
     },
-    getMesh: function(gl, mesh){
+    getMesh: function(gl, mesh) {
         let geometry = mesh.geometry;
+        if(!geometry || !geometry.attributes) {
+            return null;
+        }
 
         let vertices = geometry.attributes.position.array;
         let normals =  geometry.attributes.normal.array;
