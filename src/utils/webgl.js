@@ -1,5 +1,6 @@
 // eslint-disable-next-line no-unused-vars
 import WebXRPolyfill from "webxr-polyfill";
+import * as glm from "gl-matrix";
 
 export default {
 
@@ -55,10 +56,10 @@ export default {
     },
     loopVr: function(gl, state) {
         function render(now, frame) {
-
             let session = frame.session;
-            state.animation = session.requestAnimationFrame(render);
-
+            if(state.vrInitialized) {
+                state.animation = session.requestAnimationFrame(render);
+            }
 
             let pose = null;
             if (state.vrSpace && frame) {
@@ -68,7 +69,6 @@ export default {
             state.tick(now);
             state.cleanDrawback(gl, state);
             state.updateCallback(gl, state);
-
 
             if (pose) {
                 let layer = session ? session.renderState.baseLayer : null;
@@ -120,15 +120,18 @@ export default {
     loop: function(gl, state) {
 
         function render(now) {
+            if(!state.vrInitialized) {
+                state.animation = requestAnimationFrame(render);
+            }
+
             state.tick(now);
             state.cleanDrawback(gl, state);
             state.updateCallback(gl, state);
 
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             state.drawCallback(gl, state, null, null);
-            state.animation = requestAnimationFrame(render);
-        }
 
+        }
         state.animation = requestAnimationFrame(render);
     },
     getProgramInfo: function(gl, shaderProgram){
@@ -251,4 +254,20 @@ export default {
         }
         return texture;
     },
+
+    getBillboardMatrix: function(position, cameraPos, cameraUp) {
+        let to = glm.vec3.subtract(glm.vec3.create(), cameraPos, position);
+        let look = glm.vec3.normalize(to, to);
+        let right = glm.vec3.cross(glm.vec3.create(), cameraUp, look);
+        let up2 = glm.vec3.cross(glm.vec3.create(), look, right);
+
+        return glm.mat4.fromValues(
+            right[0],right[1],right[2],0,
+            up2[0],up2[1],up2[2],0,
+            look[0],look[1],look[2],0,
+            position[0],position[1],position[2],1
+        );
+    }
+
+
 }
