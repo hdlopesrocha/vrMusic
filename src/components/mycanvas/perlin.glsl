@@ -4,6 +4,9 @@
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 vec4 fade(vec4 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
+#define PI 3.1415926535897932384626433832795
+
+
 
 float cnoise(vec4 P){
   vec4 Pi0 = floor(P); // Integer part for indexing
@@ -141,8 +144,8 @@ float cnoise(vec4 P){
 float noise(vec4 p){
     return  +0.5*cnoise(p)
             +0.25*cnoise(p*2.0)
-            +0.125*cnoise(p*4.0)
-            +0.0625*cnoise(p*8.0)
+           // +0.125*cnoise(p*4.0)
+           // +0.0625*cnoise(p*8.0)
             //+0.03125*cnoise(p*16.0)
             //+0.015625*cnoise(p*32.0)
             //+0.0078125*cnoise(p*64.0)

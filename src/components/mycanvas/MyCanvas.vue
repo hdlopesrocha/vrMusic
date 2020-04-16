@@ -49,6 +49,7 @@
             let modelMesh = [];
             let spaceMesh = [];
             let billboardMesh = [];
+            let cylinderMesh = webgl.getCylinderMesh(gl, webgl.loadTexture(gl, "models/pattern.png"));
 
             const loader = new GLTFLoader();
             //console.log(model);
@@ -143,8 +144,8 @@
                 // Draw model
                 // **********
                 glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-10, -2, 0));
-                glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI);
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -10));
+                glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI/2.0);
                 gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
                 gl.uniform1i(programInfo.uniformLocations.drawMode, 0);
 
@@ -158,12 +159,30 @@
                     }
                 }
 
+                // *************
+                // Draw cylinder
+                // *************
+                gl.enable(gl.DEPTH_TEST);
+                gl.enable(gl.CULL_FACE);
+                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                gl.uniform1i(programInfo.uniformLocations.drawMode, 2);
+                let cylinderDistance = 20;
+
+
+                for(let i =0; i < 2*Math.PI; i+= 2.0*Math.PI/3.0) {
+                    glm.mat4.identity(modelMatrix);
+                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-cylinderDistance*Math.sin(i), -128, -cylinderDistance*Math.cos(i)-10));
+                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    webgl.drawMesh(gl, programInfo, cylinderMesh);
+                }
+
 
                 // ************
                 // Draw mandala
                 // ************
                 glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-10, -4.2, 0));
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -4.2, -10));
                 glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
                 glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time*0.1);
                 gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -192,8 +211,9 @@
                 gl.enable(gl.DEPTH_TEST);
                 gl.disable(gl.CULL_FACE);
                 for (let model of billboardMesh) {
+                    // eslint-disable-next-line no-unused-vars
                     for (let mesh of model) {
-                        webgl.drawMesh(gl, programInfo, mesh);
+                //       webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
 
