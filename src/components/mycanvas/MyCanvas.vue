@@ -7,8 +7,9 @@
 </template>
 
 <script>
-    import vertexShader from 'raw-loader!./shader.vert';
-    import fragmentShader from 'raw-loader!./shader.frag';
+    import vertexShader from 'raw-loader!./vert.glsl';
+    import fragmentShader from 'raw-loader!./frag.glsl';
+    import perlinShader from 'raw-loader!./perlin.glsl';
 
     import webgl from '../../utils/webgl';
     import * as glm from 'gl-matrix'
@@ -32,14 +33,16 @@
         },
         mounted() {
             const canvas = document.querySelector('#glcanvas');
-            const gl = canvas.getContext('webgl', {xrCompatible: true});
+            const gl = canvas.getContext('webgl2', {xrCompatible: true});
             this.gl = gl;
             canvas.addEventListener("contextmenu", (event) => {
                 event.preventDefault();
             });
 
+            let fShader = fragmentShader.replace("//#PERLIN", perlinShader);
+            console.log(fShader);
 
-            const shaderProgram = webgl.initShaderProgram(gl, vertexShader, fragmentShader);
+            const shaderProgram = webgl.initShaderProgram(gl, vertexShader, fShader);
             gl.useProgram(shaderProgram);
             const programInfo = webgl.getProgramInfo(gl, shaderProgram);
 
@@ -79,6 +82,10 @@
 
             // eslint-disable-next-line no-unused-vars
             function draw(gl, state, viewMatrix, projectionMatrix) {
+                gl.uniform1f(programInfo.uniformLocations.time, state.time);
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
                 if (viewMatrix == null) {
                     viewMatrix = glm.mat4.create();
                     let center = glm.vec3.fromValues(0, 0, -1);
@@ -103,29 +110,11 @@
                 glm.mat4.identity(modelMatrix);
                 glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(400, 400, 400));
                 gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                gl.uniform1i(programInfo.uniformLocations.drawMode, 0);
                 gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                 gl.disable(gl.DEPTH_TEST);
                 gl.disable(gl.CULL_FACE);
                 for (let model of spaceMesh) {
-                    for (let mesh of model) {
-                        webgl.drawMesh(gl, programInfo, mesh);
-                    }
-                }
-
-                // **************
-                // Draw billboard
-                // **************
-                let position = glm.vec3.fromValues(0, 0, -5);
-                let up = glm.vec3.fromValues(0, 1, 0);
-                // let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
-                let eye = glm.vec3.fromValues(viewMatrix[12], viewMatrix[13], viewMatrix[14]);
-                let modelMatrix2 = webgl.getBillboardMatrix(position, eye, up);
-
-                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
-                gl.enable(gl.DEPTH_TEST);
-                gl.disable(gl.CULL_FACE);
-                for (let model of billboardMesh) {
                     for (let mesh of model) {
                         webgl.drawMesh(gl, programInfo, mesh);
                     }
@@ -138,6 +127,8 @@
                 glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-2, 0, -7));
                 glm.mat4.rotateY(modelMatrix, modelMatrix, state.time);
                 gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
+                gl.uniform1i(programInfo.uniformLocations.drawMode, 0);
+
                 gl.enable(gl.DEPTH_TEST);
                 gl.enable(gl.CULL_FACE);
 
@@ -147,6 +138,28 @@
                         webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
+
+
+                // **************
+                // Draw billboard
+                // **************
+                let position = glm.vec3.fromValues(0, 0, -5);
+                let up = glm.vec3.fromValues(0, 1, 0);
+                // let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
+                let eye = glm.vec3.fromValues(viewMatrix[12], viewMatrix[13], viewMatrix[14]);
+                let modelMatrix2 = webgl.getBillboardMatrix(position, eye, up);
+
+                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                gl.uniform1i(programInfo.uniformLocations.drawMode, 1);
+                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                gl.enable(gl.DEPTH_TEST);
+                gl.disable(gl.CULL_FACE);
+                for (let model of billboardMesh) {
+                    for (let mesh of model) {
+                        webgl.drawMesh(gl, programInfo, mesh);
+                    }
+                }
+
             }
 
             // eslint-disable-next-line no-unused-vars

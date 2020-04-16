@@ -149,6 +149,8 @@ export default {
                 modelMatrix: gl.getUniformLocation(shaderProgram, 'uModelMatrix'),
                 uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
                 enableLight: gl.getUniformLocation(shaderProgram, 'uEnableLight'),
+                drawMode: gl.getUniformLocation(shaderProgram, 'uDrawMode'),
+                time: gl.getUniformLocation(shaderProgram, 'uTime'),
             },
         };
     },
