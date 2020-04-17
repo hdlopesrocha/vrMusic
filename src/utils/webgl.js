@@ -152,6 +152,8 @@ export default {
                 drawMode: gl.getUniformLocation(shaderProgram, 'uDrawMode'),
                 drawVariant: gl.getUniformLocation(shaderProgram, 'uDrawVariant'),
                 time: gl.getUniformLocation(shaderProgram, 'uTime'),
+                lightDirection: gl.getUniformLocation(shaderProgram, 'uLightDirection'),
+                cameraPosition: gl.getUniformLocation(shaderProgram, 'uCameraPosition'),
             },
         };
     },
