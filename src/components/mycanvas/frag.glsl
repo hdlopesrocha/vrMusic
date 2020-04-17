@@ -22,7 +22,7 @@ void main(void) {
   vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
   vec3 normal = normalize(vNormal);
 
-  if(uDrawMode == 0) {
+  if(uDrawMode == 0 || uDrawMode == 4) {
     color = texture(uSampler, vTextureCoordinates);
   } else if(uDrawMode == 1){
     float n = noise(vec4(vTextureCoordinates.x, vTextureCoordinates.y, 0.0, uTime*0.1));
@@ -58,5 +58,9 @@ void main(void) {
       float l = length(fragColor.xyz);
       fragColor.w = l*l*l*0.05;
     }
+  }
+  if (uDrawMode == 4) {
+    float gradient = 32.0;
+    fragColor.xyz += vColor.xyz*clamp(1.0 - abs(vPosition.y)/gradient, 0.0, 0.5);
   }
 }

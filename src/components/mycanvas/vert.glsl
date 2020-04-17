@@ -92,9 +92,24 @@ void main(void) {
         0.0
         );
         vColor = noiseColor;
+    } else if (uDrawMode == 4) {
+        float cx = 0.0;
+        float cy = cos(aTextureCoordinates.y*PI);
+        float time = uTime;
+        float variant = 4.0 * float(uDrawVariant);
 
-
+        // COLOR
+        float colorVelocity = 0.5;// color changes quicker
+        float colorFrequency = 1.0;// color is wider
+        vec4 noiseColor = vec4(
+            noise(1.0*vec4(cx*colorFrequency, cy, time*colorVelocity, variant)),
+            noise(1.0*vec4(variant, cx*colorFrequency, cy, colorVelocity*time)),
+            noise(1.0*vec4(cx*colorFrequency, cy, variant, colorVelocity*time)),
+            0.0
+        );
+        vColor = noiseColor;
     }
+
     mat4 mv = uViewMatrix*uModelMatrix;
     mat3 vNormalMatrix = transpose(inverse(mat3(mv)));
 
