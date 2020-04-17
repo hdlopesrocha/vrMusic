@@ -80,8 +80,8 @@ void main(void) {
         float time = uTime;
 
         // COLOR
-        float colorVelocity = 0.5;// color changes quicker
-        float colorFrequency = 0.2;// color is wider
+        float colorVelocity = 0.2;// color changes quicker
+        float colorFrequency = 0.1;// color is wider
         vec4 noiseColor = vec4(
             noise(1.0*vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
             noise(1.0*vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
@@ -102,6 +102,21 @@ void main(void) {
             noise(1.0*vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
             noise(1.0*vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
             0.0
+        );
+        vColor = noiseColor;
+    }else if (uDrawMode == 5) {
+        float cx = aTextureCoordinates.x;
+        float cy = aTextureCoordinates.y;
+        float time = uTime;
+
+        // COLOR
+        float colorVelocity = 0.2;// color changes quicker
+        float colorFrequency = 0.1;// color is wider
+        vec4 noiseColor = vec4(
+            noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
+            noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
+            noise(vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
+        0.0
         );
         vColor = noiseColor;
     }

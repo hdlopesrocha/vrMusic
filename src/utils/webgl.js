@@ -257,7 +257,7 @@ export default {
             im: this.loadImage(gl, image)
         };
     },
-    drawMesh: function(gl, programInfo, mesh) {
+    drawMesh: function(gl, programInfo, mesh, image) {
 
 
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vb);
@@ -274,9 +274,12 @@ export default {
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ib);
 
-        if(mesh.im) {
+        if(!image) {
+            image = mesh.im;
+        }
+        if(image) {
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, mesh.im);
+            gl.bindTexture(gl.TEXTURE_2D, image);
             gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
         }
         gl.drawElements(gl.TRIANGLES, mesh.ic, gl.UNSIGNED_SHORT, 0);

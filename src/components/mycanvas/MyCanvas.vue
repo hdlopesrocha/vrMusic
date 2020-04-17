@@ -54,6 +54,7 @@
             let spaceMesh = [];
             let billboardMesh = [];
             let cylinderMesh = webgl.getCylinderMesh(gl, webgl.loadTexture(gl, "models/pattern.png"));
+            let flareTexture = webgl.loadTexture(gl, "models/flare.png");
 
             const loader = new GLTFLoader();
             //console.log(model);
@@ -111,6 +112,7 @@
 
                 gl.enable(gl.BLEND);
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                let variant = 0;
 
                 if (viewMatrix == null) {
                     viewMatrix = glm.mat4.create();
@@ -151,6 +153,34 @@
                     }
                 }
 
+                // **************
+                // Draw billboard
+                // **************
+
+                //let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
+                let up = glm.vec3.fromValues(0, 1, 0);
+                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                gl.uniform1i(programInfo.uniformLocations.drawMode, 5);
+                gl.enable(gl.DEPTH_TEST);
+                gl.disable(gl.CULL_FACE);
+                variant = 0;
+                for(let i = 0; i < 2.0*Math.PI; i+= Math.PI/8.0) {
+                    let r = 32.0;
+                    let position = glm.vec3.fromValues(r*Math.cos(i), 8*Math.sin(state.time+variant), r*Math.sin(i));
+                    let modelMatrix2 = webgl.getBillboardMatrix(position, cameraPosition, up);
+                    glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
+
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                    gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant*4.0);
+
+                    for (let model of billboardMesh) {
+                        // eslint-disable-next-line no-unused-vars
+                        for (let mesh of model) {
+                            webgl.drawMesh(gl, programInfo, mesh, flareTexture);
+                        }
+                    }
+                }
+
                 // *************
                 // Draw cylinder
                 // *************
@@ -160,7 +190,7 @@
                 gl.uniform1i(programInfo.uniformLocations.drawMode, 2);
                 let cylinderDistance = 20;
 
-                let variant = 0;
+                variant = 0;
                 for(let i =Math.PI/3.0; i < 2*Math.PI - 0.001; i+= 2.0*Math.PI/3.0) {
                     glm.mat4.identity(modelMatrix);
                     glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-cylinderDistance*Math.sin(i), -128, -cylinderDistance*Math.cos(i)-5));
@@ -205,28 +235,6 @@
                 for (let model of modelMesh) {
                     for (let mesh of model) {
                         webgl.drawMesh(gl, programInfo, mesh);
-                    }
-                }
-
-                // **************
-                // Draw billboard
-                // **************
-                let position = glm.vec3.fromValues(-3, 1, -3);
-                let up = glm.vec3.fromValues(0, 1, 0);
-                //let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
-
-                console.log(cameraPosition);
-                let modelMatrix2 = webgl.getBillboardMatrix(position, cameraPosition, up);
-
-                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                gl.uniform1i(programInfo.uniformLocations.drawMode, 0);
-                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
-                gl.enable(gl.DEPTH_TEST);
-                gl.disable(gl.CULL_FACE);
-                for (let model of billboardMesh) {
-                    // eslint-disable-next-line no-unused-vars
-                    for (let mesh of model) {
-                    //    webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
 

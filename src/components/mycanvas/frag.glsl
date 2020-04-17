@@ -22,7 +22,7 @@ void main(void) {
   vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
   vec3 normal = normalize(vNormal);
 
-  if(uDrawMode == 0 || uDrawMode == 4) {
+  if(uDrawMode == 0 || uDrawMode == 4 || uDrawMode == 5) {
     color = texture(uSampler, vTextureCoordinates);
   } else if(uDrawMode == 1){
     float n = noise(vec4(vTextureCoordinates, 0.0, uTime*0.1));
@@ -48,9 +48,11 @@ void main(void) {
 
     vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
     float edgeDot = abs(dot(vertexToCam, normal));
-    if(edgeDot < 0.3) {
-      color = clamp(vec4(normalize(vColor.xyz), 0.0)*8.0, 0.5, 1.0);
-      fragColor.xyz = color.xyz;
+    if(edgeDot < 0.2) {
+      float minColor = 0.5;
+      vec3 c = vColor.xyz*8.0 + minColor;
+
+      fragColor.xyz = clamp(c, minColor, 1.0);
       fragColor.w = 1.0;
     } else {
       float l = 1.0-length(fragColor.xyz);
@@ -58,7 +60,12 @@ void main(void) {
     }
   }
   if (uDrawMode == 4) {
-    float gradient = 32.0;
+    float gradient = 150.0;
     fragColor.xyz += vColor.xyz*clamp(1.0 - abs(vPosition.y)/gradient, 0.0, 0.5);
+  }
+
+  if (uDrawMode == 5) {
+    fragColor.xyz += vColor.xyz;
+   // fragColor.w = 1.0;
   }
 }
