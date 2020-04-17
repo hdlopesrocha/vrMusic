@@ -50,7 +50,7 @@
             let modelMesh = [];
             let spaceMesh = [];
             let billboardMesh = [];
-            let cylinderMesh = webgl.getCylinderMesh(gl, webgl.loadTexture(gl, "models/pattern.png"));
+            let cylinderMesh = webgl.getCylinderMesh(gl, webgl.loadTexture(gl, "models/pattern2.png"));
 
             const loader = new GLTFLoader();
             //console.log(model);
@@ -169,11 +169,12 @@
                 gl.uniform1i(programInfo.uniformLocations.drawMode, 2);
                 let cylinderDistance = 20;
 
-
-                for(let i =0; i < 2*Math.PI; i+= 2.0*Math.PI/3.0) {
+                let variant = 0;
+                for(let i =0; i < 2*Math.PI - 0.001; i+= Math.PI/3.0) {
                     glm.mat4.identity(modelMatrix);
                     glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-cylinderDistance*Math.sin(i), -128, -cylinderDistance*Math.cos(i)-10));
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
+                    gl.uniform1i(programInfo.uniformLocations.drawVariant, ++variant);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     webgl.drawMesh(gl, programInfo, cylinderMesh);
                 }

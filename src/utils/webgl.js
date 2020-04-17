@@ -150,6 +150,7 @@ export default {
                 uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
                 enableLight: gl.getUniformLocation(shaderProgram, 'uEnableLight'),
                 drawMode: gl.getUniformLocation(shaderProgram, 'uDrawMode'),
+                drawVariant: gl.getUniformLocation(shaderProgram, 'uDrawVariant'),
                 time: gl.getUniformLocation(shaderProgram, 'uTime'),
             },
         };
@@ -161,11 +162,11 @@ export default {
         let indices = [];
         let indices_count = 0;
 
-        const height = 32;
+        const height = 128;
         const definitionA = 16;
 
         // eslint-disable-next-line no-unused-vars
-        const definitionH = 2;
+        const definitionH = 0.5;
 
         for(let h=0; h <= height; ++h){
             for(let a=0; a <= definitionA; ++a){
@@ -178,7 +179,7 @@ export default {
                 normals.push(x);
                 normals.push(0);
                 normals.push(z);
-                texture_coordinates.push(h);
+                texture_coordinates.push(y);
                 texture_coordinates.push(2.0*a/definitionA);
             }
         }

@@ -33,7 +33,7 @@ void main(void) {
     float ny = vColor.y;
     float nz = vColor.z;
 
-    vec4 c = texture(uSampler, vTextureCoordinates+vec2(-1.0,0.0)*uTime*0.5+vec2(nx,ny)*0.2);
+    vec4 c = texture(uSampler, vTextureCoordinates);
 
     color = clamp(c+vec4(nx,ny,nz, 0.0), 0.0, 1.0);
   }
