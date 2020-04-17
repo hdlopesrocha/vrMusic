@@ -109,14 +109,14 @@
 
                 if (viewMatrix == null) {
                     viewMatrix = glm.mat4.create();
-                    let center = glm.vec3.fromValues(0, 0, -1);
+                    let center = glm.vec3.fromValues(0, -2, -10);
                     let up = glm.vec3.fromValues(0, 1, 0);
-                    let eye = glm.vec3.fromValues(0, 0, 0);
+                    let eye = glm.vec3.fromValues(0, 3, 3);
                     glm.mat4.lookAt(viewMatrix, eye, center, up);
                 }
                 if (projectionMatrix == null) {
                     projectionMatrix = glm.mat4.create();
-                    glm.mat4.perspective(projectionMatrix, 45 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 1000.0);
+                    glm.mat4.perspective(projectionMatrix, 90 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 1000.0);
                 }
                 gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
                 gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
