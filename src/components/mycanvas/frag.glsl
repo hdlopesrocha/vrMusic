@@ -49,14 +49,14 @@ void main(void) {
   if(uDrawMode == 3) {
 
     vec3 vertexToCam = normalize(vCameraPosition-vPosition.xyz);
-    float edgeDot = dot(vertexToCam, normal);
+    float edgeDot = abs(dot(vertexToCam, normal));
     if(edgeDot < 0.3) {
       color = clamp(vec4(vColor.xyz, 0.0)*8.0, 0.5, 1.0);
       fragColor.xyz = color.xyz;
       fragColor.w = 1.0;
     } else {
-      float l = length(fragColor.xyz);
-      fragColor.w = l*l*l*0.05;
+      float l = 1.0-length(fragColor.xyz);
+      fragColor.w = (1.0 - l*l*l)*0.2;
     }
   }
   if (uDrawMode == 4) {

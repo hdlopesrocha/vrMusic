@@ -109,7 +109,7 @@
 
                 if (viewMatrix == null) {
                     viewMatrix = glm.mat4.create();
-                    let center = glm.vec3.fromValues(0, -2, -10);
+                    let center = glm.vec3.fromValues(0, -2, -5);
                     let up = glm.vec3.fromValues(0, 1, 0);
                     let eye = glm.vec3.fromValues(0, 3, 3);
                     glm.mat4.lookAt(viewMatrix, eye, center, up);
@@ -153,7 +153,7 @@
                 let variant = 0;
                 for(let i =Math.PI/3.0; i < 2*Math.PI - 0.001; i+= 2.0*Math.PI/3.0) {
                     glm.mat4.identity(modelMatrix);
-                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-cylinderDistance*Math.sin(i), -128, -cylinderDistance*Math.cos(i)-10));
+                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-cylinderDistance*Math.sin(i), -128, -cylinderDistance*Math.cos(i)-5));
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
                     gl.uniform1i(programInfo.uniformLocations.drawVariant, ++variant);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -165,7 +165,7 @@
                 // Draw mandala
                 // ************
                 glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -4.2, -10));
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -4.2, -5));
                 glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
                 glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time*0.1);
                 gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -204,12 +204,12 @@
                 // Draw model
                 // **********
                 glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -10));
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -5));
                 glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI/2.0-state.time*0.1);
                 gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
                 gl.uniform1i(programInfo.uniformLocations.drawMode, 3);
 
-                gl.enable(gl.DEPTH_TEST);
+                gl.disable(gl.DEPTH_TEST);
                 gl.enable(gl.CULL_FACE);
 
                 gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
