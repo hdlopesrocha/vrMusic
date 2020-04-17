@@ -10,13 +10,18 @@ uniform float uTime;
 in vec3 vNormal;
 in vec2 vTextureCoordinates;
 in vec4 vColor;
+in vec3 vLightDirection;
+in vec3 vCameraPosition;
+in vec4 vPosition;
 
 out vec4 fragColor;
 
 //#PERLIN
 
 void main(void) {
-  vec4 color = vec4(0.0, 0.0, 0.0, 0.0);
+  vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
+  vec3 normal = normalize(vNormal);
+
   if(uDrawMode == 0) {
     color = texture(uSampler, vTextureCoordinates);
   } else if(uDrawMode == 1){
@@ -29,21 +34,29 @@ void main(void) {
     float pc = clamp(pr*n+pr*0.25, 0.0, 1.0);
     color = vec4(1.0, pc*2.0, 0.0,pc);
   } else if(uDrawMode == 2) {
-    float nx = vColor.x;
-    float ny = vColor.y;
-    float nz = vColor.z;
 
     vec4 c = texture(uSampler, vTextureCoordinates);
-
-    color = clamp(c+vec4(nx,ny,nz, 0.0), 0.0, 1.0);
+    color = clamp(c+vec4(vColor.xyz, 0.0), 0.0, 1.0);
   }
 
   if(uEnableLight) {
-    vec3 lightDirection = vec3(0.0, 0.0, 1.0);
-    float dotFactor = dot(vNormal, lightDirection);
+    float dotFactor = dot(normal, -vLightDirection);
     fragColor = color*vec4(dotFactor,dotFactor,dotFactor,1.0);
   } else {
     fragColor = color;
   }
 
+  if(uDrawMode == 3) {
+
+    vec3 vertexToCam = normalize(vCameraPosition-vPosition.xyz);
+    float edgeDot = dot(vertexToCam, normal);
+    if(edgeDot < 0.3) {
+      color = clamp(vec4(vColor.xyz, 0.0)*8.0, 0.5, 1.0);
+      fragColor.xyz = color.xyz;
+      fragColor.w = 1.0;
+    } else {
+      float l = length(fragColor.xyz);
+      fragColor.w = l*l*l*0.05;
+    }
+  }
 }

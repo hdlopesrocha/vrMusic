@@ -143,7 +143,7 @@ float cnoise(vec4 P){
 
 float noise(vec4 p){
     return  +0.5*cnoise(p)
-            +0.25*cnoise(p*2.0)
+            //+0.25*cnoise(p*2.0)
            // +0.125*cnoise(p*4.0)
            // +0.0625*cnoise(p*8.0)
             //+0.03125*cnoise(p*16.0)

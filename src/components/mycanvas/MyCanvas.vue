@@ -141,25 +141,6 @@
                     }
                 }
 
-                // **********
-                // Draw model
-                // **********
-                glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -10));
-                glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI/2.0);
-                gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
-                gl.uniform1i(programInfo.uniformLocations.drawMode, 0);
-
-                gl.enable(gl.DEPTH_TEST);
-                gl.enable(gl.CULL_FACE);
-
-                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                for (let model of modelMesh) {
-                    for (let mesh of model) {
-                        webgl.drawMesh(gl, programInfo, mesh);
-                    }
-                }
-
                 // *************
                 // Draw cylinder
                 // *************
@@ -170,7 +151,7 @@
                 let cylinderDistance = 20;
 
                 let variant = 0;
-                for(let i =0; i < 2*Math.PI - 0.001; i+= Math.PI/3.0) {
+                for(let i =Math.PI/3.0; i < 2*Math.PI - 0.001; i+= 2.0*Math.PI/3.0) {
                     glm.mat4.identity(modelMatrix);
                     glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-cylinderDistance*Math.sin(i), -128, -cylinderDistance*Math.cos(i)-10));
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
@@ -216,6 +197,25 @@
                     // eslint-disable-next-line no-unused-vars
                     for (let mesh of model) {
                 //       webgl.drawMesh(gl, programInfo, mesh);
+                    }
+                }
+
+                // **********
+                // Draw model
+                // **********
+                glm.mat4.identity(modelMatrix);
+                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -10));
+                glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI/2.0-state.time*0.1);
+                gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
+                gl.uniform1i(programInfo.uniformLocations.drawMode, 3);
+
+                gl.enable(gl.DEPTH_TEST);
+                gl.enable(gl.CULL_FACE);
+
+                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                for (let model of modelMesh) {
+                    for (let mesh of model) {
+                        webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
 
