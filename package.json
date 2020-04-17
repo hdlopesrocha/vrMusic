@@ -1,11 +1,14 @@
 {
-  "name": "7bs",
+  "name": "vrMusic",
   "version": "0.1.0",
+  "homepage": "http://hdlopesrocha.github.io/vrMusic",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve --host 0.0.0.0 --https true",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "bluebird": "^3.7.2",
@@ -25,6 +28,7 @@
     "babel-eslint": "^10.1.0",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
+    "gh-pages": "^2.2.0",
     "raw-loader": "^4.0.0",
     "vue-template-compiler": "^2.6.11"
   },

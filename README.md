@@ -1,4 +1,4 @@
-# 7bs
+# vrMusic
 
 ## Project setup
 ```
