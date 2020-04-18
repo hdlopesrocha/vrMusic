@@ -25,6 +25,11 @@ out vec4 vPosition;
 //#PERLIN
 
 void main(void) {
+    if(uDrawMode == DRAW_MODE_2D || uDrawMode == DRAW_MODE_2D_MIX) {
+        gl_Position = uViewMatrix * vPosition;
+    //    return;
+    }
+
     vPosition = uModelMatrix*aVertexPosition;
     mat4 viewProjectionMatrix = uProjectionMatrix * uViewMatrix;
 

@@ -8,6 +8,8 @@
 
 <script>
     /* eslint-disable no-unused-vars */
+    import {mat4} from "gl-matrix";
+
     const DRAW_MODE_2D_MIX = -3
     const DRAW_MODE_2D = -2
     const DRAW_MODE_WHITE = -1
@@ -33,8 +35,8 @@
 
         data() {
             return {
-                canvasWidth: 600,
-                canvasHeight: 600,
+                canvasWidth: 512,
+                canvasHeight: 512,
                 state: null,
                 gl: null
             }
@@ -68,10 +70,6 @@
             let cylinderMesh = webgl.getCylinderMesh(gl, webgl.loadTexture(gl, "models/pattern.png"));
             let flareTexture = webgl.loadTexture(gl, "models/flare.png");
 
-            let drawFrameBuffer = null;
-            let maskFrameBuffer = null;
-            let mixFrameBuffer = null;
-
             const loader = new GLTFLoader();
             //console.log(model);
             loader.load("models/ganesha.gltf", gltf => {
@@ -79,7 +77,7 @@
                 let group = [];
                 for (let c of gltf.scene.children) {
                     let m = webgl.getMesh(gl, c);
-                    if(m!=null) {
+                    if (m != null) {
                         group.push(m);
                     }
                 }
@@ -90,7 +88,7 @@
                 let group = [];
                 for (let c of gltf.scene.children) {
                     let m = webgl.getMesh(gl, c);
-                    if(m!=null) {
+                    if (m != null) {
                         group.push(m);
                     }
                 }
@@ -103,19 +101,20 @@
                 let group = [];
                 for (let c of gltf.scene.children) {
                     let m = webgl.getMesh(gl, c);
-                    if(m!=null) {
+                    if (m != null) {
                         group.push(m);
                     }
                 }
                 mandalaMesh.push(group);
             });
+
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
 
             }
 
             // eslint-disable-next-line no-unused-vars
-            function clean(gl, state, framebuffer) {
+            function clean(gl, framebuffer) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
                 gl.clearColor(0.0, 0.0, 0.0, 0.0);
                 gl.enable(gl.DEPTH_TEST);
@@ -123,21 +122,38 @@
             }
 
             // eslint-disable-next-line no-unused-vars
-            function draw(gl, state, viewMatrix, projectionMatrix, framebuffer) {
+            function draw(gl, viewport, state, viewMatrix, projectionMatrix, mainFramebuffer, index) {
                 webgl.enableAttribs(gl, programInfo);
-                if(drawFrameBuffer == null || drawFrameBuffer.width !== state.width || drawFrameBuffer.height !== state.height){
-                    if(drawFrameBuffer != null){
+                // viewport for extra framebuffers (not for the main one)
+                gl.viewport(0, 0, viewport.width, viewport.height);
+
+                let map = state.map[index];
+                if (!map) {
+                    map = {};
+                }
+                let drawFrameBuffer = map.drawFrameBuffer;
+                let maskFrameBuffer = map.maskFrameBuffer;
+                let mixFrameBuffer = map.mixFrameBuffer;
+
+                if (drawFrameBuffer == null || drawFrameBuffer.width !== viewport.width || drawFrameBuffer.height !== viewport.height) {
+                    if (drawFrameBuffer != null) {
                         webgl.deleteFramebuffer(gl, drawFrameBuffer);
                         webgl.deleteFramebuffer(gl, maskFrameBuffer);
                         webgl.deleteFramebuffer(gl, mixFrameBuffer);
                     }
-                    drawFrameBuffer = webgl.createFramebuffer(gl, state.width, state.height);
-                    maskFrameBuffer = webgl.createFramebuffer(gl, state.width, state.height);
-                    mixFrameBuffer = webgl.createFramebuffer(gl, state.width, state.height);
+                    drawFrameBuffer = webgl.createFramebuffer(gl, viewport.width, viewport.height);
+                    maskFrameBuffer = webgl.createFramebuffer(gl, viewport.width, viewport.height);
+                    mixFrameBuffer = webgl.createFramebuffer(gl, viewport.width, viewport.height);
                 }
-                clean(gl, state, drawFrameBuffer.frame);
-                clean(gl, state, maskFrameBuffer.frame);
-                clean(gl, state, mixFrameBuffer.frame);
+                clean(gl, drawFrameBuffer.frame);
+                clean(gl, maskFrameBuffer.frame);
+                clean(gl, mixFrameBuffer.frame);
+
+                state.map[index] = {
+                    drawFrameBuffer: drawFrameBuffer,
+                    maskFrameBuffer: maskFrameBuffer,
+                    mixFrameBuffer: mixFrameBuffer
+                };
 
                 gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
@@ -152,7 +168,7 @@
                     viewMatrix = glm.mat4.create();
                     let center = glm.vec3.fromValues(0, -2, -5);
                     let up = glm.vec3.fromValues(0, 1, 0);
-                    let eye = glm.vec3.fromValues(-5*Math.sin(state.time), 3, -5*Math.cos(state.time)-5);
+                    let eye = glm.vec3.fromValues(-5 * Math.sin(state.time), 3, -5 * Math.cos(state.time) - 5);
                     glm.mat4.lookAt(viewMatrix, eye, center, up);
                 }
                 if (projectionMatrix == null) {
@@ -172,39 +188,42 @@
                 // **********
                 // Draw space
                 // **********
-                glm.mat4.identity(modelMatrix);
-                glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(400, 400, 400));
-                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_SKY);
-                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                gl.disable(gl.DEPTH_TEST);
-                gl.disable(gl.CULL_FACE);
-                for (let model of spaceMesh) {
-                    for (let mesh of model) {
-                        webgl.drawMesh(gl, programInfo, mesh);
+                {
+                    glm.mat4.identity(modelMatrix);
+                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(400, 400, 400));
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_SKY);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    for (let model of spaceMesh) {
+                        for (let mesh of model) {
+                            webgl.drawMesh(gl, programInfo, mesh);
+                        }
                     }
                 }
 
                 // **************
                 // Draw billboard
                 // **************
+                {
+                    //let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
+                    let up = glm.vec3.fromValues(0, 1, 0);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_BILLBOARD);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    variant = 0;
+                    for (let i = 0; i < 2.0 * Math.PI; i += Math.PI / 8.0) {
+                        let r = 32.0;
+                        let position = glm.vec3.fromValues(r * Math.cos(i), 8 * Math.sin(state.time + variant), r * Math.sin(i));
+                        let modelMatrix2 = webgl.getBillboardMatrix(position, cameraPosition, up);
+                        glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
 
-                //let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
-                let up = glm.vec3.fromValues(0, 1, 0);
-                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_BILLBOARD);
-                gl.enable(gl.DEPTH_TEST);
-                gl.disable(gl.CULL_FACE);
-                variant = 0;
-                for(let i = 0; i < 2.0*Math.PI; i+= Math.PI/8.0) {
-                    let r = 32.0;
-                    let position = glm.vec3.fromValues(r*Math.cos(i), 8*Math.sin(state.time+variant), r*Math.sin(i));
-                    let modelMatrix2 = webgl.getBillboardMatrix(position, cameraPosition, up);
-                    glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
-
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
-                    gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant*4.0);
-                    webgl.drawMesh(gl, programInfo, billboardMesh2, flareTexture);
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
+                        webgl.drawMesh(gl, programInfo, billboardMesh2, flareTexture);
+                    }
                 }
 
                 // *************
@@ -236,7 +255,7 @@
                     glm.mat4.identity(modelMatrix);
                     glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -4.2, -5));
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time*0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_DEFAULT);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -264,9 +283,6 @@
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
-                    gl.clearColor(0.0, 0.0, 0.0, 0.0);
-                    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_WHITE);
 
                     for (let model of modelMesh) {
@@ -282,14 +298,16 @@
                 {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, mixFrameBuffer.frame);
 
-                    let viewMatrix2 = glm.mat4.create();
+                    let viewMatrix2 = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
                     let modelMatrix2 = glm.mat4.create();
-                    glm.mat4.translate(modelMatrix2, modelMatrix2, glm.vec3.fromValues(0, 0, -1));
+                    let projectionMatrix2 = glm.mat4.create();
+
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_MIX);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
@@ -297,6 +315,7 @@
 
                     // Reset
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
 
                 }
                 // ****************
@@ -305,14 +324,15 @@
                 {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
-                    let viewMatrix2 = glm.mat4.create();
+                    let viewMatrix2 = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
                     let modelMatrix2 = glm.mat4.create();
-                    glm.mat4.translate(modelMatrix2, modelMatrix2, glm.vec3.fromValues(0, 0, -1));
+                    let projectionMatrix2 = glm.mat4.create();
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
@@ -320,6 +340,7 @@
 
                     // Reset
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
                 }
                 // ***************
                 // Draw model mesh
@@ -348,16 +369,19 @@
                 // DRAW FRAMEBUFFER
                 // ****************
                 {
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, mainFramebuffer);
+                    // viewport for main framebuffer
+                    gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
-                    let viewMatrix2 = glm.mat4.create();
+                    let viewMatrix2 = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
                     let modelMatrix2 = glm.mat4.create();
-                    glm.mat4.translate(modelMatrix2, modelMatrix2, glm.vec3.fromValues(0, 0, -1));
+                    let projectionMatrix2 = glm.mat4.create();
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 

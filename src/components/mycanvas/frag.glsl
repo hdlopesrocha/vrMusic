@@ -53,7 +53,7 @@ void main(void) {
       vec4 sum = vec4(0.0);
       float delta = 0.005;
       int count = 0;
-      int size = 5;
+      int size = 3;
       for(int i=-size; i <= size; ++i) {
         for(int j=-size; j <= size; ++j) {
 

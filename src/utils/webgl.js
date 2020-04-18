@@ -45,9 +45,8 @@ export default {
             cleanDrawback: cleanDrawback,
             drawCallback: drawCallback,
             updateCallback: updateCallback,
-            width: 0,
-            height: 0,
             vrSupported: false,
+            map: {},
             tick: function(now){
                 now *= 0.001;  // convert to seconds
                 this.delta = now - this.time;
@@ -73,14 +72,12 @@ export default {
 
             if (pose) {
                 let layer = session ? session.renderState.baseLayer : null;
-                state.cleanDrawback(gl, state, layer.framebuffer);
+                state.cleanDrawback(gl, layer.framebuffer);
 
-                for (let view of pose.views) {
+                for (let i in pose.views) {
+                    let view = pose.views[i];
                     let viewport = layer.getViewport(view);
-                    state.width = viewport.width;
-                    state.height = viewport.height;
-                    gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-                    state.drawCallback(gl, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer);
+                    state.drawCallback(gl, viewport, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer, i);
                 }
             }
         }
@@ -127,12 +124,17 @@ export default {
 
             state.tick(now);
             state.updateCallback(gl, state);
-
-            state.cleanDrawback(gl, state, null);
-            state.width = gl.canvas.width;
-            state.height = gl.canvas.height;
-            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-            state.drawCallback(gl, state, null, null);
+            state.cleanDrawback(gl, null)
+            let viewport = {
+                width: gl.canvas.width,
+                height: gl.canvas.height,
+                x: 0,
+                y: 0,
+            }
+            //console.log(viewport);
+            if(viewport.width && viewport.height) {
+                state.drawCallback(gl, viewport, state, null, null, null, 0);
+            }
 
         }
         state.animation = requestAnimationFrame(render);
