@@ -12,7 +12,7 @@
 
     const DRAW_MODE_2D_MIX = -3
     const DRAW_MODE_2D = -2
-    const DRAW_MODE_WHITE = -1
+    const DRAW_MODE_MASK = -1
     const DRAW_MODE_DEFAULT = 0
     const DRAW_MODE_CYLINDER = 2
     const DRAW_MODE_EDGES = 3
@@ -280,10 +280,10 @@
 
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_WHITE);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_MASK);
 
                     for (let model of modelMesh) {
                         for (let mesh of model) {

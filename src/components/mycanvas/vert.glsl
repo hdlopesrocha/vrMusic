@@ -111,7 +111,7 @@ void main(void) {
                 0.0
             );
             vColor = noiseColor;
-        }else if (uDrawMode == DRAW_MODE_BILLBOARD) {
+        } else if (uDrawMode == DRAW_MODE_BILLBOARD) {
             float cx = aTextureCoordinates.x;
             float cy = aTextureCoordinates.y;
             float time = uTime;
