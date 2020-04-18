@@ -64,48 +64,25 @@
             let lightDirection = glm.vec3.fromValues(-1.0, -1.0, -1.0);
             glm.vec3.normalize(lightDirection, lightDirection);
 
-            let mandalaMesh = [];
-            let modelMesh = [];
-            let spaceMesh = [];
+            let mandalaMesh = null;
+            let modelMesh = null;
+            let spaceMesh = null;
             let cylinderMesh = webgl.getCylinderMesh(gl, webgl.loadTexture(gl, "models/pattern.png"));
             let flareTexture = webgl.loadTexture(gl, "models/flare.png");
 
             const loader = new GLTFLoader();
             //console.log(model);
             loader.load("models/ganesha.gltf", gltf => {
-                console.log("loading G...");
-                let group = [];
-                for (let c of gltf.scene.children) {
-                    let m = webgl.getMesh(gl, c);
-                    if (m != null) {
-                        group.push(m);
-                    }
-                }
-                modelMesh.push(group);
-                console.log("loaded G!");
+                modelMesh = webgl.getModel(gl, gltf);
             });
             loader.load("models/space.gltf", gltf => {
-                let group = [];
-                for (let c of gltf.scene.children) {
-                    let m = webgl.getMesh(gl, c);
-                    if (m != null) {
-                        group.push(m);
-                    }
-                }
-                spaceMesh.push(group);
+                spaceMesh = webgl.getModel(gl, gltf);
             });
 
             let billboardMesh2 = webgl.createBillboard(gl);
 
             loader.load("models/mandala.gltf", gltf => {
-                let group = [];
-                for (let c of gltf.scene.children) {
-                    let m = webgl.getMesh(gl, c);
-                    if (m != null) {
-                        group.push(m);
-                    }
-                }
-                mandalaMesh.push(group);
+                mandalaMesh = webgl.getModel(gl, gltf);
             });
 
             // eslint-disable-next-line no-unused-vars
@@ -189,7 +166,7 @@
                 // **********
                 // Draw space
                 // **********
-                {
+                if(spaceMesh) {
                     glm.mat4.identity(modelMatrix);
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(400, 400, 400));
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -197,10 +174,8 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
-                    for (let model of spaceMesh) {
-                        for (let mesh of model) {
-                            webgl.drawMesh(gl, programInfo, mesh);
-                        }
+                    for (let mesh of spaceMesh) {
+                        webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
 
@@ -252,7 +227,7 @@
                 // ************
                 // Draw mandala
                 // ************
-                {
+                if(mandalaMesh) {
                     glm.mat4.identity(modelMatrix);
                     glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -4.2, -5));
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
@@ -262,17 +237,15 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
-                    for (let model of mandalaMesh) {
-                        for (let mesh of model) {
-                            webgl.drawMesh(gl, programInfo, mesh);
-                        }
+                    for (let mesh of mandalaMesh) {
+                        webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
 
                 // ***************
                 // Draw model mask
                 // ***************
-                {
+                if(modelMesh) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, maskFrameBuffer.frame);
 
                     glm.mat4.identity(modelMatrix);
@@ -286,10 +259,8 @@
 
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_MASK);
 
-                    for (let model of modelMesh) {
-                        for (let mesh of model) {
-                            webgl.drawMesh(gl, programInfo, mesh);
-                        }
+                    for (let mesh of modelMesh) {
+                        webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
 
@@ -320,7 +291,7 @@
                 // ***************
                 // Draw model mesh
                 // ***************
-                {
+                if(modelMesh) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
                     glm.mat4.identity(modelMatrix);
@@ -333,12 +304,11 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_EDGES);
-                    for (let model of modelMesh) {
-                        for (let mesh of model) {
-                            webgl.drawMesh(gl, programInfo, mesh);
-                        }
+                    for (let mesh of modelMesh) {
+                        webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
+
                 // ****************
                 // DRAW MIXBUFFER 2
                 // ****************
@@ -359,33 +329,6 @@
 
                     // Reset
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
-                }
-                // *****
-                // DEBUG
-                // *****
-                let debug = false;
-                if(debug){
-                    let up = glm.vec3.fromValues(0, 1, 0);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_DEFAULT);
-                    gl.enable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    {
-                        let modelMatrix2 = webgl.getBillboardMatrix(glm.vec3.fromValues(2,0,-5), cameraPosition, up);
-                        glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
-
-                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
-                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
-                        webgl.drawMesh(gl, programInfo, billboardMesh2, maskFrameBuffer.texture);
-                    }
-                    {
-                        let modelMatrix2 = webgl.getBillboardMatrix(glm.vec3.fromValues(-2,0,-5), cameraPosition, up);
-                        glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
-
-                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
-                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
-                        webgl.drawMesh(gl, programInfo, billboardMesh2, mixFrameBuffer.texture);
-                    }
                 }
 
                 // ****************
