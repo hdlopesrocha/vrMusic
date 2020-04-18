@@ -160,6 +160,7 @@ export default {
                 time: gl.getUniformLocation(shaderProgram, 'uTime'),
                 lightDirection: gl.getUniformLocation(shaderProgram, 'uLightDirection'),
                 cameraPosition: gl.getUniformLocation(shaderProgram, 'uCameraPosition'),
+                canvasSize: gl.getUniformLocation(shaderProgram, 'uCanvasSize'),
             },
         };
     },

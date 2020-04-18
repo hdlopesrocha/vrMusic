@@ -159,6 +159,7 @@
 
                 gl.uniform1f(programInfo.uniformLocations.time, state.time);
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
+                gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
 
                 gl.enable(gl.BLEND);
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);

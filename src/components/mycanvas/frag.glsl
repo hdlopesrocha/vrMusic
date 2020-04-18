@@ -10,6 +10,7 @@ uniform bool uEnableLight;
 uniform float uTime;
 uniform vec3 uLightDirection;
 uniform vec3 uCameraPosition;
+uniform vec2 uCanvasSize;
 
 in vec3 vNormal;
 in vec2 vTextureCoordinates;
@@ -45,7 +46,7 @@ void main(void) {
         vec4 maskColor = texture(uSampler1, textureCoordinates);
         if (maskColor.w > 0.0) {
             vec4 sum = vec4(0.0);
-            float delta = 0.005;
+            vec2 delta = 1.0/uCanvasSize;
             int count = 0;
             int size = 3;
             for (int i=-size; i <= size; ++i) {
@@ -55,6 +56,7 @@ void main(void) {
                 }
             }
             color = (sum / float(count)) + maskColor * 0.5+0.1;
+            color.w = 0.975;
         } else {
             color.w = 0.0;
         }
@@ -96,7 +98,7 @@ void main(void) {
             fragColor.xyz = clamp(c, minColor, 1.0);
             fragColor.w = 1.0;
         } else {
-            fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+            fragColor = vec4(0.0, 0.0, 0.0, 0.01);
         }
     }
     if (uDrawMode == DRAW_MODE_SKY) {
