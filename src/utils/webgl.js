@@ -152,6 +152,7 @@ export default {
                 projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
                 viewMatrix: gl.getUniformLocation(shaderProgram, 'uViewMatrix'),
                 modelMatrix: gl.getUniformLocation(shaderProgram, 'uModelMatrix'),
+                orthoMatrix: gl.getUniformLocation(shaderProgram, 'uOrthoMatrix'),
                 sampler0: gl.getUniformLocation(shaderProgram, 'uSampler0'),
                 sampler1: gl.getUniformLocation(shaderProgram, 'uSampler1'),
                 enableLight: gl.getUniformLocation(shaderProgram, 'uEnableLight'),

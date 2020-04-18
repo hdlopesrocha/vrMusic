@@ -64,6 +64,9 @@
             let lightDirection = glm.vec3.fromValues(-1.0, -1.0, -1.0);
             glm.vec3.normalize(lightDirection, lightDirection);
 
+            let orthoMatrix = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
+            gl.uniformMatrix4fv(programInfo.uniformLocations.orthoMatrix, false, orthoMatrix);
+
             let mandalaMesh = null;
             let modelMesh = null;
             let spaceMesh = null;
@@ -270,22 +273,15 @@
                 {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, mixFrameBuffer.frame);
 
-                    let viewMatrix2 = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
                     let modelMatrix2 = glm.mat4.create();
-
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_MIX);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
                     webgl.drawMesh(gl, programInfo, billboardMesh2, drawFrameBuffer.texture, maskFrameBuffer.texture);
-
-                    // Reset
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
-
                 }
 
                 // ***************
@@ -315,20 +311,15 @@
                 {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
-                    let viewMatrix2 = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
                     let modelMatrix2 = glm.mat4.create();
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
                     webgl.drawMesh(gl, programInfo, billboardMesh2, mixFrameBuffer.texture);
-
-                    // Reset
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
                 }
 
                 // ****************
@@ -339,12 +330,10 @@
                     // viewport for main framebuffer
                     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
-                    let viewMatrix2 = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
                     let modelMatrix2 = glm.mat4.create();
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);

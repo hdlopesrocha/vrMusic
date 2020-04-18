@@ -10,6 +10,7 @@ uniform int uDrawMode;
 uniform float uDrawVariant;
 
 uniform mat4 uViewMatrix;
+uniform mat4 uOrthoMatrix;
 uniform mat4 uProjectionMatrix;
 uniform mat4 uModelMatrix;
 uniform vec3 uLightDirection;
@@ -30,7 +31,7 @@ void main(void) {
     vPosition = uModelMatrix*aVertexPosition;
 
     if(uDrawMode == DRAW_MODE_2D || uDrawMode == DRAW_MODE_2D_MIX) {
-        gl_Position = uViewMatrix * vPosition;
+        gl_Position = uOrthoMatrix * vPosition;
         vTextureCoordinates = tTextureCoordinates;
         return;
     }
