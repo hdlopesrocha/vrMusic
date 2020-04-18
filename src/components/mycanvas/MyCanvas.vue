@@ -2,7 +2,8 @@
     <div>
         <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
         <br>
-        <button v-on:click="enableVr">VR</button>
+        <button v-on:click="enableVr">VR</button><button v-on:click="enableMic">Mic</button>
+
     </div>
 </template>
 
@@ -48,11 +49,28 @@
                 dataArray: null,
                 freqNormalized: null,
                 dataNormalized: null,
+                timeDisplacement: 0
             }
         },
         methods: {
             enableVr() {
                 webGl.loopVr(this.gl, this.state);
+            },
+            enableMic() {
+                function handleSound(stream) {
+                    console.log(this);
+                    this.audioContext = new AudioContext();
+                    this.analyser = this.audioContext.createAnalyser();
+                    this.freqArray = new Float32Array(this.analyser.frequencyBinCount);
+                    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                    webAudio.initializeArray(this.freqArray);
+                    webAudio.initializeArray(this.dataArray);
+                    this.source = this.audioContext.createMediaStreamSource(stream);
+                    this.source.connect(this.analyser);
+                    this.isPlaying = true;
+                }
+                navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+                navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(handleSound.bind(this));
             },
         },
         mounted() {
@@ -103,29 +121,13 @@
                 torusModel = webGl.getModel(gl, gltf);
             });
 
-            const maxFreq = 22050;
-
-            function handleSound(stream) {
-                console.log(this);
-                this.audioContext = new AudioContext();
-                this.analyser = this.audioContext.createAnalyser();
-                this.freqArray = new Float32Array(this.analyser.frequencyBinCount);
-                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-                webAudio.initializeArray(this.freqArray);
-                webAudio.initializeArray(this.dataArray);
-                this.source = this.audioContext.createMediaStreamSource(stream);
-                this.source.connect(this.analyser);
-                this.isPlaying = true;
-            }
-
-            navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
-            navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(handleSound.bind(this));
-
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
                 if(this.audioContext) {
+                    const maxFreq = 22050;
                     this.freqNormalized = webAudio.updateFrequencyArray(this.analyser, this.freqArray, maxFreq);
                     this.dataNormalized = webAudio.updateDataArray(this.analyser, this.dataArray);
+                    this.timeDisplacement = this.freqNormalized[0].y;
                 }
             }
 
@@ -173,7 +175,7 @@
 
                 gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
-                gl.uniform1f(programInfo.uniformLocations.time, state.time);
+                gl.uniform1f(programInfo.uniformLocations.time, state.time+this.timeDisplacement);
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
                 gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
 
