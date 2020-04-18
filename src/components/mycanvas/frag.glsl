@@ -34,8 +34,6 @@ void main(void) {
     textureCoordinates.y = 1.0 - vTextureCoordinates.y;
   }
 
-  vec3 normal = normalize(vNormal);
-
   if(uDrawMode == 1){
     float n = noise(vec4(textureCoordinates, 0.0, uTime*0.1));
     vec2 p = 2.0*textureCoordinates - vec2(1.0, 1.0);
@@ -67,12 +65,18 @@ void main(void) {
     } else {
       color.w = 0.0;
     }
-
-    //color.x = 0.5;
+    fragColor = color;
+    return;
+  } else if(uDrawMode == DRAW_MODE_2D) {
+    color = texture(uSampler0, textureCoordinates);
+    fragColor = color;
+    return;
   } else {
     color = texture(uSampler0, textureCoordinates);
   }
 
+
+  vec3 normal = normalize(vNormal);
   if(uEnableLight) {
     float dotFactor = dot(normal, -uLightDirection);
     fragColor = color*vec4(dotFactor,dotFactor,dotFactor,1.0);

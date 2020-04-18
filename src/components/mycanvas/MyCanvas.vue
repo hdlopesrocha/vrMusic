@@ -300,14 +300,12 @@
 
                     let viewMatrix2 = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
                     let modelMatrix2 = glm.mat4.create();
-                    let projectionMatrix2 = glm.mat4.create();
 
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_MIX);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
@@ -315,7 +313,6 @@
 
                     // Reset
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
 
                 }
                 // ****************
@@ -326,13 +323,11 @@
 
                     let viewMatrix2 = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
                     let modelMatrix2 = glm.mat4.create();
-                    let projectionMatrix2 = glm.mat4.create();
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
@@ -340,7 +335,6 @@
 
                     // Reset
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
                 }
                 // ***************
                 // Draw model mesh
@@ -375,13 +369,11 @@
 
                     let viewMatrix2 = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
                     let modelMatrix2 = glm.mat4.create();
-                    let projectionMatrix2 = glm.mat4.create();
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
