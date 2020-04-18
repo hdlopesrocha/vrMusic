@@ -278,7 +278,7 @@
                     glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -5));
                     glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
 
-                    gl.disable(gl.DEPTH_TEST);
+                    gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
