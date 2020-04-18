@@ -26,10 +26,6 @@ void main(void) {
   vec2 textureCoordinates = vTextureCoordinates;
 
 
-  if(uDrawMode == DRAW_MODE_WHITE) {
-    fragColor = color;
-    return;
-  }
   if(uDrawMode == DRAW_MODE_2D || uDrawMode == DRAW_MODE_2D_MIX) {
     textureCoordinates.y = 1.0 - vTextureCoordinates.y;
   }
@@ -54,14 +50,11 @@ void main(void) {
       int size = 3;
       for(int i=-size; i <= size; ++i) {
         for(int j=-size; j <= size; ++j) {
-
           sum += texture(uSampler0, textureCoordinates+delta*vec2(i,j));
           ++count;
         }
       }
-      color = (sum / float(count)) * maskColor;
-      color.w = 1.0;
-     // color = vec4(1.0, 0.0, 0.0, 1.0);
+      color = (sum / float(count)) + maskColor * 0.3;
     } else {
       color.w = 0.0;
     }
@@ -84,6 +77,17 @@ void main(void) {
     fragColor = color;
   }
 
+  if(uDrawMode == DRAW_MODE_WHITE) {
+    vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
+    float edgeDot = abs(dot(vertexToCam, normal));
+    if(edgeDot < 0.2) {
+      fragColor = vec4(0.0,0.0,0.0, 0.0);
+    }
+    else {
+      fragColor = color;
+    }
+  }
+
   if(uDrawMode == DRAW_MODE_EDGES) {
 
     vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
@@ -95,8 +99,7 @@ void main(void) {
       fragColor.xyz = clamp(c, minColor, 1.0);
       fragColor.w = 1.0;
     } else {
-      float l = 1.0-length(fragColor.xyz);
-      fragColor.w = (1.0 - l*l*l)*0.1;
+      fragColor = vec4(0.0,0.0,0.0, 1.0);
     }
   }
   if (uDrawMode == DRAW_MODE_SKY) {

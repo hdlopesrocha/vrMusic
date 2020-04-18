@@ -315,6 +315,29 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
 
                 }
+
+                // ***************
+                // Draw model mesh
+                // ***************
+                {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
+                    glm.mat4.identity(modelMatrix);
+                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -5));
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
+
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.enable(gl.CULL_FACE);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_EDGES);
+                    for (let model of modelMesh) {
+                        for (let mesh of model) {
+                            webgl.drawMesh(gl, programInfo, mesh);
+                        }
+                    }
+                }
                 // ****************
                 // DRAW MIXBUFFER 2
                 // ****************
@@ -336,26 +359,31 @@
                     // Reset
                     gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
                 }
-                // ***************
-                // Draw model mesh
-                // ***************
-                {
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                // *****
+                // DEBUG
+                // *****
+                let debug = false;
+                if(debug){
+                    let up = glm.vec3.fromValues(0, 1, 0);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_DEFAULT);
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    {
+                        let modelMatrix2 = webgl.getBillboardMatrix(glm.vec3.fromValues(2,0,-5), cameraPosition, up);
+                        glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
 
-                    glm.mat4.identity(modelMatrix);
-                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -5));
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
+                        webgl.drawMesh(gl, programInfo, billboardMesh2, maskFrameBuffer.texture);
+                    }
+                    {
+                        let modelMatrix2 = webgl.getBillboardMatrix(glm.vec3.fromValues(-2,0,-5), cameraPosition, up);
+                        glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
 
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.enable(gl.CULL_FACE);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_EDGES);
-                    for (let model of modelMesh) {
-                        for (let mesh of model) {
-                            webgl.drawMesh(gl, programInfo, mesh);
-                        }
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
+                        webgl.drawMesh(gl, programInfo, billboardMesh2, mixFrameBuffer.texture);
                     }
                 }
 

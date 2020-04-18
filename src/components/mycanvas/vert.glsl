@@ -37,10 +37,6 @@ void main(void) {
     else {
         mat4 viewProjectionMatrix = uProjectionMatrix * uViewMatrix;
 
-        if (uDrawMode == DRAW_MODE_WHITE) {
-            gl_Position = viewProjectionMatrix * vPosition;
-            return;
-        }
 
         if (uDrawMode == DRAW_MODE_CYLINDER) {
             float cx = aTextureCoordinates.x;
