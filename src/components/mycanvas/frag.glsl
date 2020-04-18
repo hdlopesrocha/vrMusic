@@ -56,7 +56,7 @@ void main(void) {
                 }
             }
             color = (sum / float(count)) + maskColor * 0.5+0.1;
-            color.w = 0.975;
+            color.w = 1.0;
         } else {
             color.w = 0.0;
         }
@@ -66,6 +66,11 @@ void main(void) {
         color = texture(uSampler0, textureCoordinates);
         fragColor = color;
         return;
+    } else if (uDrawMode == DRAW_MODE_TORUS) {
+        float minColor = 0.5;
+        vec3 c = vColor.xyz*8.0 + minColor;
+        color.xyz = clamp(c, minColor, 1.0);
+        color.w = 1.0;
     } else {
         color = texture(uSampler0, textureCoordinates);
     }
@@ -82,7 +87,7 @@ void main(void) {
     if (uDrawMode == DRAW_MODE_MASK) {
         vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
         float edgeDot = abs(dot(vertexToCam, normal));
-        if (edgeDot < 0.2) {
+        if (edgeDot < 0.3) {
             fragColor *= 0.0;
         }
     }
@@ -91,7 +96,7 @@ void main(void) {
 
         vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
         float edgeDot = abs(dot(vertexToCam, normal));
-        if (edgeDot < 0.2) {
+        if (edgeDot < 0.3) {
             float minColor = 0.5;
             vec3 c = vColor.xyz*8.0 + minColor;
 

@@ -287,6 +287,9 @@ export default {
         if(!image0) {
             image0 = mesh.im;
         }
+        if(!image0) {
+            image0 = 0;
+        }
         if(!image1) {
             image1 = image0;
         }
@@ -331,7 +334,7 @@ export default {
         const border = 0;
         const srcFormat = gl.RGBA;
         const srcType = gl.UNSIGNED_BYTE;
-        const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+        const pixel = new Uint8Array([0, 0, 0, 255]);  // opaque blue
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
 
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -350,7 +353,7 @@ export default {
         const border = 0;
         const srcFormat = gl.RGBA;
         const srcType = gl.UNSIGNED_BYTE;
-        const pixel = new Uint8Array([0, 0, 0, 0]);  // opaque blue
+        const pixel = new Uint8Array([0, 0, 0, 255]);  // opaque blue
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
 
         const image = new Image();

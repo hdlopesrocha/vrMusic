@@ -8,8 +8,6 @@
 
 <script>
     /* eslint-disable no-unused-vars */
-    import {mat4} from "gl-matrix";
-
     const DRAW_MODE_2D_MIX = -3
     const DRAW_MODE_2D = -2
     const DRAW_MODE_MASK = -1
@@ -18,6 +16,7 @@
     const DRAW_MODE_EDGES = 3
     const DRAW_MODE_SKY = 4
     const DRAW_MODE_BILLBOARD = 5
+    const DRAW_MODE_TORUS = 6
     /* eslint-enable no-unused-vars */
 
 
@@ -67,25 +66,31 @@
             let orthoMatrix = glm.mat4.ortho(glm.mat4.create(), -1, 1, -1, 1, -1.0, 1.0);
             gl.uniformMatrix4fv(programInfo.uniformLocations.orthoMatrix, false, orthoMatrix);
 
-            let mandalaMesh = null;
-            let modelMesh = null;
-            let spaceMesh = null;
-            let cylinderMesh = webgl.getCylinderMesh(gl, webgl.loadTexture(gl, "models/pattern.png"));
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+            let mandalaModel = null;
+            let statueModel = null;
+            let spaceModel = null;
+            let torusModel = null;
+
+            let patternTexture = webgl.loadTexture(gl, "models/pattern.png");
+            let cylinderMesh = webgl.getCylinderMesh(gl, patternTexture);
             let flareTexture = webgl.loadTexture(gl, "models/flare.png");
+            let billboardMesh = webgl.createBillboard(gl);
 
             const loader = new GLTFLoader();
-            //console.log(model);
             loader.load("models/ganesha.gltf", gltf => {
-                modelMesh = webgl.getModel(gl, gltf);
+                statueModel = webgl.getModel(gl, gltf);
             });
             loader.load("models/space.gltf", gltf => {
-                spaceMesh = webgl.getModel(gl, gltf);
+                spaceModel = webgl.getModel(gl, gltf);
             });
-
-            let billboardMesh2 = webgl.createBillboard(gl);
-
             loader.load("models/mandala.gltf", gltf => {
-                mandalaMesh = webgl.getModel(gl, gltf);
+                mandalaModel = webgl.getModel(gl, gltf);
+            });
+            loader.load("models/torus.gltf", gltf => {
+                torusModel = webgl.getModel(gl, gltf);
             });
 
             // eslint-disable-next-line no-unused-vars
@@ -141,8 +146,6 @@
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
                 gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
 
-                gl.enable(gl.BLEND);
-                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
                 let variant = 0;
 
                 if (viewMatrix == null) {
@@ -164,12 +167,12 @@
                 gl.uniform3fv(programInfo.uniformLocations.cameraPosition, cameraPosition);
 
                 let modelMatrix = glm.mat4.create();
-
+                let center = glm.vec3.fromValues(0,0,-5);
 
                 // **********
                 // Draw space
                 // **********
-                if(spaceMesh) {
+                if(spaceModel) {
                     glm.mat4.identity(modelMatrix);
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(400, 400, 400));
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -177,7 +180,28 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
-                    for (let mesh of spaceMesh) {
+                    for (let mesh of spaceModel) {
+                        webgl.drawMesh(gl, programInfo, mesh);
+                    }
+                }
+
+                // **********
+                // Draw torus
+                // **********
+                if(torusModel) {
+                    let position = glm.vec3.fromValues(0, 0, 0);
+                    glm.vec3.add(position, position, center);
+                    glm.mat4.identity(modelMatrix);
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
+                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(32, 4, 32));
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_TORUS);
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.enable(gl.CULL_FACE);
+
+                    for (let mesh of torusModel) {
                         webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
@@ -196,12 +220,12 @@
                     for (let i = 0; i < 2.0 * Math.PI; i += Math.PI / 8.0) {
                         let r = 32.0;
                         let position = glm.vec3.fromValues(r * Math.cos(i), 8 * Math.sin(state.time + variant), r * Math.sin(i));
-                        let modelMatrix2 = webgl.getBillboardMatrix(position, cameraPosition, up);
-                        glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
+                        modelMatrix = webgl.getBillboardMatrix(position, cameraPosition, up);
+                        glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(2, 2, 2));
 
-                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                         gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
-                        webgl.drawMesh(gl, programInfo, billboardMesh2, flareTexture);
+                        webgl.drawMesh(gl, programInfo, billboardMesh, flareTexture);
                     }
                 }
 
@@ -217,8 +241,10 @@
 
                     variant = 0;
                     for (let i = Math.PI / 3.0; i < 2 * Math.PI - 0.001; i += 2.0 * Math.PI / 3.0) {
+                        let position = glm.vec3.fromValues(-cylinderDistance * Math.sin(i), -128, -cylinderDistance * Math.cos(i));
                         glm.mat4.identity(modelMatrix);
-                        glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-cylinderDistance * Math.sin(i), -128, -cylinderDistance * Math.cos(i) - 5));
+                        glm.vec3.add(position, position, center);
+                        glm.mat4.translate(modelMatrix, modelMatrix, position);
                         glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
                         gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -230,9 +256,11 @@
                 // ************
                 // Draw mandala
                 // ************
-                if(mandalaMesh) {
+                if(mandalaModel) {
+                    let position = glm.vec3.fromValues(0, -2.2, 0);
+                    glm.vec3.add(position, position, center);
                     glm.mat4.identity(modelMatrix);
-                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -4.2, -5));
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
                     glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -240,7 +268,7 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
-                    for (let mesh of mandalaMesh) {
+                    for (let mesh of mandalaModel) {
                         webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
@@ -248,11 +276,13 @@
                 // ***************
                 // Draw model mask
                 // ***************
-                if(modelMesh) {
+                if(statueModel) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, maskFrameBuffer.frame);
 
+                    let position = glm.vec3.fromValues(0, 0, 0);
+                    glm.vec3.add(position, position, center);
                     glm.mat4.identity(modelMatrix);
-                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -5));
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
 
                     gl.enable(gl.DEPTH_TEST);
@@ -262,7 +292,7 @@
 
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_MASK);
 
-                    for (let mesh of modelMesh) {
+                    for (let mesh of statueModel) {
                         webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
@@ -273,34 +303,36 @@
                 {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, mixFrameBuffer.frame);
 
-                    let modelMatrix2 = glm.mat4.create();
+                    glm.mat4.identity(modelMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_MIX);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    webgl.drawMesh(gl, programInfo, billboardMesh2, drawFrameBuffer.texture, maskFrameBuffer.texture);
+                    webgl.drawMesh(gl, programInfo, billboardMesh, drawFrameBuffer.texture, maskFrameBuffer.texture);
                 }
 
                 // ***************
                 // Draw model mesh
                 // ***************
-                if(modelMesh) {
+                if(statueModel) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
+                    let position = glm.vec3.fromValues(0, 0, 0);
+                    glm.vec3.add(position, position, center);
                     glm.mat4.identity(modelMatrix);
-                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -5));
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_EDGES);
-                    for (let mesh of modelMesh) {
+                    for (let mesh of statueModel) {
                         webgl.drawMesh(gl, programInfo, mesh);
                     }
                 }
@@ -311,15 +343,15 @@
                 {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
-                    let modelMatrix2 = glm.mat4.create();
+                    glm.mat4.identity(modelMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    webgl.drawMesh(gl, programInfo, billboardMesh2, mixFrameBuffer.texture);
+                    webgl.drawMesh(gl, programInfo, billboardMesh, mixFrameBuffer.texture);
                 }
 
                 // ****************
@@ -330,18 +362,17 @@
                     // viewport for main framebuffer
                     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
-                    let modelMatrix2 = glm.mat4.create();
+                    glm.mat4.identity(modelMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    webgl.drawMesh(gl, programInfo, billboardMesh2, drawFrameBuffer.texture);
+                    webgl.drawMesh(gl, programInfo, billboardMesh, drawFrameBuffer.texture);
                 }
             }
-
 
             this.state = webgl.createState(clean, draw, update);
             webgl.loop(this.gl, this.state);

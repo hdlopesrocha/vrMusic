@@ -94,7 +94,7 @@ void main(void) {
                 noise(1.0*vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
                 noise(1.0*vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
                 noise(1.0*vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
-            0.0
+                0.0
             );
             vColor = noiseColor;
         } else if (uDrawMode == DRAW_MODE_SKY) {
@@ -127,6 +127,33 @@ void main(void) {
                 0.0
             );
             vColor = noiseColor;
+        } else if (uDrawMode == DRAW_MODE_TORUS) {
+            float cx = aTextureCoordinates.x;
+            float cy = cos(aTextureCoordinates.y*PI);
+            float time = uTime;
+
+            // COLOR
+            float colorVelocity = 0.5;// color changes quicker
+            float colorFrequency = 0.1;// color is wider
+            vec4 noiseColor = vec4(
+                noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
+                noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
+                noise(vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
+                0.0
+            );
+            vColor = noiseColor;
+
+            // POSITION
+            float displacementAmplitude = 8.0;
+            float displacementFrequency = 0.1;
+            float displacementVelocity = 2.0;
+            vec4 displacement = displacementAmplitude * vec4(
+                0.0,
+                noise(vec4(uDrawVariant, vPosition.x*displacementFrequency, vPosition.z*displacementFrequency, uTime*displacementVelocity)),
+                0.0,
+                0.0
+            );
+            vPosition += displacement;
         }
 
         mat3 vNormalMatrix = transpose(inverse(mat3(uModelMatrix)));
