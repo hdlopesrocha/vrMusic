@@ -21,17 +21,24 @@ out vec3 vLightDirection;
 out vec2 vTextureCoordinates;
 out vec4 vPosition;
 
+//#COMMON
 //#PERLIN
 
 void main(void) {
     vPosition = uModelMatrix*aVertexPosition;
+    mat4 viewProjectionMatrix = uProjectionMatrix * uViewMatrix;
+
+    if (uDrawMode == DRAW_MODE_WHITE) {
+        gl_Position = viewProjectionMatrix * vPosition;
+        return;
+    }
 
     // temporary variables
     vec4 tNormal = uModelMatrix*aVertexNormal;
     vec2 tTextureCoordinates = aTextureCoordinates;
 
 
-    if (uDrawMode == 2) {
+    if (uDrawMode == DRAW_MODE_CYLINDER) {
         float cx = aTextureCoordinates.x;
         float cy = cos(aTextureCoordinates.y*PI);
         float time = uTime;
@@ -74,7 +81,7 @@ void main(void) {
             0.0
         );
         vPosition += displacement;
-    } else if (uDrawMode == 3) {
+    } else if (uDrawMode == DRAW_MODE_EDGES) {
         float cx = aTextureCoordinates.x;
         float cy = cos(aTextureCoordinates.y*PI);
         float time = uTime;
@@ -89,7 +96,7 @@ void main(void) {
         0.0
         );
         vColor = noiseColor;
-    } else if (uDrawMode == 4) {
+    } else if (uDrawMode == DRAW_MODE_SKY) {
         float cx = 0.0;
         float cy = cos(aTextureCoordinates.y*PI);
         float time = uTime;
@@ -104,7 +111,7 @@ void main(void) {
             0.0
         );
         vColor = noiseColor;
-    }else if (uDrawMode == 5) {
+    }else if (uDrawMode == DRAW_MODE_BILLBOARD) {
         float cx = aTextureCoordinates.x;
         float cy = aTextureCoordinates.y;
         float time = uTime;
@@ -116,17 +123,13 @@ void main(void) {
             noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
             noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
             noise(vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
-        0.0
+            0.0
         );
         vColor = noiseColor;
     }
 
-    mat4 mv = uViewMatrix*uModelMatrix;
-    mat3 vNormalMatrix = transpose(inverse(mat3(mv)));
-
-    mat4 viewProjectionMatrix = uProjectionMatrix * uViewMatrix;
-
     gl_Position = viewProjectionMatrix * vPosition;
+    mat3 vNormalMatrix = transpose(inverse(mat3(uModelMatrix)));
     vNormal = normalize(vNormalMatrix * aVertexNormal.xyz);
     vTextureCoordinates = tTextureCoordinates;
 

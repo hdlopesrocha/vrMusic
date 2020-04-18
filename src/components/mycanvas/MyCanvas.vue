@@ -7,9 +7,22 @@
 </template>
 
 <script>
+    /* eslint-disable no-unused-vars */
+    const DRAW_MODE_2D_MIX = -3
+    const DRAW_MODE_2D = -2
+    const DRAW_MODE_WHITE = -1
+    const DRAW_MODE_DEFAULT = 0
+    const DRAW_MODE_CYLINDER = 2
+    const DRAW_MODE_EDGES = 3
+    const DRAW_MODE_SKY = 4
+    const DRAW_MODE_BILLBOARD = 5
+    /* eslint-enable no-unused-vars */
+
+
     import vertexShader from 'raw-loader!./vert.glsl';
     import fragmentShader from 'raw-loader!./frag.glsl';
     import perlinShader from 'raw-loader!./perlin.glsl';
+    import commonShader from 'raw-loader!./common.glsl';
 
     import webgl from '../../utils/webgl';
     import * as glm from 'gl-matrix'
@@ -39,8 +52,8 @@
                 event.preventDefault();
             });
 
-            let fShader = fragmentShader.replace("//#PERLIN", perlinShader);
-            let vShader = vertexShader.replace("//#PERLIN", perlinShader);
+            let fShader = fragmentShader.replace("//#PERLIN", perlinShader).replace("//#COMMON", commonShader);
+            let vShader = vertexShader.replace("//#PERLIN", perlinShader).replace("//#COMMON", commonShader);
 
             const shaderProgram = webgl.initShaderProgram(gl, vShader, fShader);
             gl.useProgram(shaderProgram);
@@ -52,9 +65,12 @@
             let mandalaMesh = [];
             let modelMesh = [];
             let spaceMesh = [];
-            let billboardMesh = [];
             let cylinderMesh = webgl.getCylinderMesh(gl, webgl.loadTexture(gl, "models/pattern.png"));
             let flareTexture = webgl.loadTexture(gl, "models/flare.png");
+
+            let drawFrameBuffer = null;
+            let maskFrameBuffer = null;
+            let mixFrameBuffer = null;
 
             const loader = new GLTFLoader();
             //console.log(model);
@@ -80,16 +96,9 @@
                 }
                 spaceMesh.push(group);
             });
-            loader.load("models/billboard.gltf", gltf => {
-                let group = [];
-                for (let c of gltf.scene.children) {
-                    let m = webgl.getMesh(gl, c);
-                    if(m!=null) {
-                        group.push(m);
-                    }
-                }
-                billboardMesh.push(group);
-            });
+
+            let billboardMesh2 = webgl.createBillboard(gl);
+
             loader.load("models/mandala.gltf", gltf => {
                 let group = [];
                 for (let c of gltf.scene.children) {
@@ -106,7 +115,32 @@
             }
 
             // eslint-disable-next-line no-unused-vars
-            function draw(gl, state, viewMatrix, projectionMatrix) {
+            function clean(gl, state, framebuffer) {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+                gl.clearColor(0.0, 0.0, 0.0, 0.0);
+                gl.enable(gl.DEPTH_TEST);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            }
+
+            // eslint-disable-next-line no-unused-vars
+            function draw(gl, state, viewMatrix, projectionMatrix, framebuffer) {
+                webgl.enableAttribs(gl, programInfo);
+                if(drawFrameBuffer == null || drawFrameBuffer.width !== state.width || drawFrameBuffer.height !== state.height){
+                    if(drawFrameBuffer != null){
+                        webgl.deleteFramebuffer(gl, drawFrameBuffer);
+                        webgl.deleteFramebuffer(gl, maskFrameBuffer);
+                        webgl.deleteFramebuffer(gl, mixFrameBuffer);
+                    }
+                    drawFrameBuffer = webgl.createFramebuffer(gl, state.width, state.height);
+                    maskFrameBuffer = webgl.createFramebuffer(gl, state.width, state.height);
+                    mixFrameBuffer = webgl.createFramebuffer(gl, state.width, state.height);
+                }
+                clean(gl, state, drawFrameBuffer.frame);
+                clean(gl, state, maskFrameBuffer.frame);
+                clean(gl, state, mixFrameBuffer.frame);
+
+                gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
                 gl.uniform1f(programInfo.uniformLocations.time, state.time);
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
 
@@ -130,12 +164,10 @@
 
                 let invertedViewMatrix = glm.mat4.invert(glm.mat4.create(), viewMatrix);
                 let cameraPosition = glm.vec3.fromValues(invertedViewMatrix[12], invertedViewMatrix[13], invertedViewMatrix[14]);
-                gl.uniformMatrix3fv(programInfo.uniformLocations.cameraPosition, false, cameraPosition);
-
+                gl.uniform3fv(programInfo.uniformLocations.cameraPosition, cameraPosition);
 
                 let modelMatrix = glm.mat4.create();
-                // eslint-disable-next-line no-unused-vars
-                let rotation = glm.quat.create();
+
 
                 // **********
                 // Draw space
@@ -143,7 +175,7 @@
                 glm.mat4.identity(modelMatrix);
                 glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(400, 400, 400));
                 gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                gl.uniform1i(programInfo.uniformLocations.drawMode, 4);
+                gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_SKY);
                 gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                 gl.disable(gl.DEPTH_TEST);
                 gl.disable(gl.CULL_FACE);
@@ -160,7 +192,7 @@
                 //let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
                 let up = glm.vec3.fromValues(0, 1, 0);
                 gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                gl.uniform1i(programInfo.uniformLocations.drawMode, 5);
+                gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_BILLBOARD);
                 gl.enable(gl.DEPTH_TEST);
                 gl.disable(gl.CULL_FACE);
                 variant = 0;
@@ -172,80 +204,167 @@
 
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
                     gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant*4.0);
-
-                    for (let model of billboardMesh) {
-                        // eslint-disable-next-line no-unused-vars
-                        for (let mesh of model) {
-                            webgl.drawMesh(gl, programInfo, mesh, flareTexture);
-                        }
-                    }
+                    webgl.drawMesh(gl, programInfo, billboardMesh2, flareTexture);
                 }
 
                 // *************
                 // Draw cylinder
                 // *************
-                gl.enable(gl.DEPTH_TEST);
-                gl.enable(gl.CULL_FACE);
-                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                gl.uniform1i(programInfo.uniformLocations.drawMode, 2);
-                let cylinderDistance = 20;
+                {
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.enable(gl.CULL_FACE);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_CYLINDER);
+                    let cylinderDistance = 20;
 
-                variant = 0;
-                for(let i =Math.PI/3.0; i < 2*Math.PI - 0.001; i+= 2.0*Math.PI/3.0) {
-                    glm.mat4.identity(modelMatrix);
-                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-cylinderDistance*Math.sin(i), -128, -cylinderDistance*Math.cos(i)-5));
-                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
-                    gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant*4.0);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    webgl.drawMesh(gl, programInfo, cylinderMesh);
+                    variant = 0;
+                    for (let i = Math.PI / 3.0; i < 2 * Math.PI - 0.001; i += 2.0 * Math.PI / 3.0) {
+                        glm.mat4.identity(modelMatrix);
+                        glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-cylinderDistance * Math.sin(i), -128, -cylinderDistance * Math.cos(i) - 5));
+                        glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
+                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                        webgl.drawMesh(gl, programInfo, cylinderMesh);
+                    }
                 }
 
 
                 // ************
                 // Draw mandala
                 // ************
-                glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -4.2, -5));
-                glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
-                glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time*0.1);
-                gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                gl.uniform1i(programInfo.uniformLocations.drawMode, 0);
-                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                gl.enable(gl.DEPTH_TEST);
-                gl.disable(gl.CULL_FACE);
-                for (let model of mandalaMesh) {
-                    for (let mesh of model) {
-                        webgl.drawMesh(gl, programInfo, mesh);
+                {
+                    glm.mat4.identity(modelMatrix);
+                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -4.2, -5));
+                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time*0.1);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_DEFAULT);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    for (let model of mandalaMesh) {
+                        for (let mesh of model) {
+                            webgl.drawMesh(gl, programInfo, mesh);
+                        }
                     }
                 }
 
-                // **********
-                // Draw model
-                // **********
-                glm.mat4.identity(modelMatrix);
-                glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -5));
-                glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI/2.0-state.time*0.1);
-                gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
-                gl.uniform1i(programInfo.uniformLocations.drawMode, 3);
+                // ***************
+                // Draw model mask
+                // ***************
+                {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, maskFrameBuffer.frame);
 
-                gl.disable(gl.DEPTH_TEST);
-                gl.enable(gl.CULL_FACE);
+                    glm.mat4.identity(modelMatrix);
+                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -5));
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
 
-                gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                for (let model of modelMesh) {
-                    for (let mesh of model) {
-                        webgl.drawMesh(gl, programInfo, mesh);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.enable(gl.CULL_FACE);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+                    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_WHITE);
+
+                    for (let model of modelMesh) {
+                        for (let mesh of model) {
+                            webgl.drawMesh(gl, programInfo, mesh);
+                        }
                     }
                 }
 
+                // ****************
+                // DRAW MIXBUFFER 1
+                // ****************
+                {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, mixFrameBuffer.frame);
+
+                    let viewMatrix2 = glm.mat4.create();
+                    let modelMatrix2 = glm.mat4.create();
+                    glm.mat4.translate(modelMatrix2, modelMatrix2, glm.vec3.fromValues(0, 0, -1));
+
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_MIX);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+
+                    webgl.drawMesh(gl, programInfo, billboardMesh2, drawFrameBuffer.texture, maskFrameBuffer.texture);
+
+                    // Reset
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
+
+                }
+                // ****************
+                // DRAW MIXBUFFER 2
+                // ****************
+                {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
+                    let viewMatrix2 = glm.mat4.create();
+                    let modelMatrix2 = glm.mat4.create();
+                    glm.mat4.translate(modelMatrix2, modelMatrix2, glm.vec3.fromValues(0, 0, -1));
+
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+
+                    webgl.drawMesh(gl, programInfo, billboardMesh2, mixFrameBuffer.texture);
+
+                    // Reset
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
+                }
+                // ***************
+                // Draw model mesh
+                // ***************
+                {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
+                    glm.mat4.identity(modelMatrix);
+                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0, -2, -5));
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
+
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.enable(gl.CULL_FACE);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_EDGES);
+                    for (let model of modelMesh) {
+                        for (let mesh of model) {
+                            webgl.drawMesh(gl, programInfo, mesh);
+                        }
+                    }
+                }
+
+                // ****************
+                // DRAW FRAMEBUFFER
+                // ****************
+                {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+
+                    let viewMatrix2 = glm.mat4.create();
+                    let modelMatrix2 = glm.mat4.create();
+                    glm.mat4.translate(modelMatrix2, modelMatrix2, glm.vec3.fromValues(0, 0, -1));
+
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix2);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+
+                    webgl.drawMesh(gl, programInfo, billboardMesh2, drawFrameBuffer.texture);
+                }
             }
 
-            // eslint-disable-next-line no-unused-vars
-            function clean(gl, state) {
-                gl.clearColor(0.1, 0.1, 0.1, 1.0);
-                gl.enable(gl.DEPTH_TEST);
-                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            }
 
             this.state = webgl.createState(clean, draw, update);
             webgl.loop(this.gl, this.state);

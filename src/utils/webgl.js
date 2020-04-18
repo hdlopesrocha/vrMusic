@@ -45,6 +45,8 @@ export default {
             cleanDrawback: cleanDrawback,
             drawCallback: drawCallback,
             updateCallback: updateCallback,
+            width: 0,
+            height: 0,
             vrSupported: false,
             tick: function(now){
                 now *= 0.001;  // convert to seconds
@@ -67,19 +69,18 @@ export default {
             }
 
             state.tick(now);
-            state.cleanDrawback(gl, state);
             state.updateCallback(gl, state);
 
             if (pose) {
                 let layer = session ? session.renderState.baseLayer : null;
-                gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+                state.cleanDrawback(gl, state, layer.framebuffer);
 
                 for (let view of pose.views) {
                     let viewport = layer.getViewport(view);
+                    state.width = viewport.width;
+                    state.height = viewport.height;
                     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-                    state.drawCallback(gl, state, view.transform.inverse.matrix, view.projectionMatrix);
-                    state.log = JSON.stringify(view.transform.matrix) + ":" + now;
-
+                    state.drawCallback(gl, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer);
                 }
             }
         }
@@ -125,9 +126,11 @@ export default {
             }
 
             state.tick(now);
-            state.cleanDrawback(gl, state);
             state.updateCallback(gl, state);
 
+            state.cleanDrawback(gl, state, null);
+            state.width = gl.canvas.width;
+            state.height = gl.canvas.height;
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             state.drawCallback(gl, state, null, null);
 
@@ -147,7 +150,8 @@ export default {
                 projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
                 viewMatrix: gl.getUniformLocation(shaderProgram, 'uViewMatrix'),
                 modelMatrix: gl.getUniformLocation(shaderProgram, 'uModelMatrix'),
-                uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
+                sampler0: gl.getUniformLocation(shaderProgram, 'uSampler0'),
+                sampler1: gl.getUniformLocation(shaderProgram, 'uSampler1'),
                 enableLight: gl.getUniformLocation(shaderProgram, 'uEnableLight'),
                 drawMode: gl.getUniformLocation(shaderProgram, 'uDrawMode'),
                 drawVariant: gl.getUniformLocation(shaderProgram, 'uDrawVariant'),
@@ -157,12 +161,43 @@ export default {
             },
         };
     },
+    createArrayBuffers: function(gl, vertices, normals, texture_coordinates, indices, image){
+        let indices_count = indices.length;
+
+        let vertex_buffer = gl.createBuffer();
+        let normal_buffer = gl.createBuffer();
+        let index_buffer = gl.createBuffer();
+        let texture_coordinates_buffer = gl.createBuffer();
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, texture_coordinates_buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texture_coordinates), gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+        return  {
+            ic: indices_count,
+            vb: vertex_buffer,
+            nb: normal_buffer,
+            tb: texture_coordinates_buffer,
+            ib: index_buffer,
+            im: image
+        };
+    },
+    createBillboard: function(gl) {
+        let vertices = [1, -1, 0, 1, 1, 0, -1, 1, 0, -1, -1, 0];
+        let normals = [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1];
+        let texture_coordinates = [1, 1, 1, 0, 0, 0, 0, 1];
+        let indices = [0, 1, 2, 0, 2, 3];
+        return this.createArrayBuffers(gl, vertices, normals, texture_coordinates, indices, null);
+    },
     getCylinderMesh: function(gl, image) {
         let vertices = [];
         let normals = [];
         let texture_coordinates = [];
         let indices = [];
-        let indices_count = 0;
 
         const height = 128;
         const definitionA = 16;
@@ -196,31 +231,7 @@ export default {
                 indices.push((h+1)*(definitionA+1)+(a+0));
             }
         }
-        indices_count = indices.length;
-
-        console.log("*", image);
-
-        let vertex_buffer = gl.createBuffer();
-        let normal_buffer = gl.createBuffer();
-        let index_buffer = gl.createBuffer();
-        let texture_coordinates_buffer = gl.createBuffer();
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-        gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-        gl.bindBuffer(gl.ARRAY_BUFFER, texture_coordinates_buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texture_coordinates), gl.STATIC_DRAW);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-        return  {
-            ic: indices_count,
-            vb: vertex_buffer,
-            nb: normal_buffer,
-            tb: texture_coordinates_buffer,
-            ib: index_buffer,
-            im: image
-        };
+        return this.createArrayBuffers(gl, vertices, normals, texture_coordinates, indices, image);
     },
     getMesh: function(gl, mesh) {
         let geometry = mesh.geometry;
@@ -232,56 +243,51 @@ export default {
         let normals =  geometry.attributes.normal.array;
         let texture_coordinates =  geometry.attributes.uv.array;
         let indices = geometry.index.array;
-        let indices_count = indices.length;
         let image = mesh.material.map.image;
 
-        let vertex_buffer = gl.createBuffer();
-        let normal_buffer = gl.createBuffer();
-        let index_buffer = gl.createBuffer();
-        let texture_coordinates_buffer = gl.createBuffer();
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-        gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-        gl.bindBuffer(gl.ARRAY_BUFFER, texture_coordinates_buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texture_coordinates), gl.STATIC_DRAW);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-        return  {
-            ic: indices_count,
-            vb: vertex_buffer,
-            nb: normal_buffer,
-            tb: texture_coordinates_buffer,
-            ib: index_buffer,
-            im: this.loadImage(gl, image)
-        };
+        return this.createArrayBuffers(gl, vertices, normals, texture_coordinates, indices, this.loadImage(gl, image) );
     },
-    drawMesh: function(gl, programInfo, mesh, image) {
-
+    enableAttribs: function(gl, programInfo){
+        gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+        gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
+        gl.enableVertexAttribArray(programInfo.attribLocations.textureCoordinates);
+    },
+    disableAttribs: function(gl, programInfo){
+        gl.disableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+        gl.disableVertexAttribArray(programInfo.attribLocations.vertexNormal);
+        gl.disableVertexAttribArray(programInfo.attribLocations.textureCoordinates);
+    },
+    drawMesh: function(gl, programInfo, mesh, image0, image1) {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vb);
         gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.nb);
         gl.vertexAttribPointer(programInfo.attribLocations.vertexNormal, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.tb);
         gl.vertexAttribPointer(programInfo.attribLocations.textureCoordinates, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(programInfo.attribLocations.textureCoordinates);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ib);
 
-        if(!image) {
-            image = mesh.im;
+        if(!image0) {
+            image0 = mesh.im;
         }
-        if(image) {
+        if(!image1) {
+            image1 = image0;
+        }
+
+        if(image0) {
+            gl.uniform1i(programInfo.uniformLocations.sampler0, 0);
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, image);
-            gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+            gl.bindTexture(gl.TEXTURE_2D, image0);
         }
+        if(image1) {
+            gl.uniform1i(programInfo.uniformLocations.sampler1, 1);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, image1);
+        }
+
         gl.drawElements(gl.TRIANGLES, mesh.ic, gl.UNSIGNED_SHORT, 0);
     },
     enableVr: function(state) {
@@ -314,7 +320,6 @@ export default {
         const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
 
-        console.log("loaded tex");
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
         this.generateMipmap(gl, image);
@@ -359,7 +364,47 @@ export default {
             look[0],look[1],look[2],0,
             position[0],position[1],position[2],1
         );
-    }
+    },
+    createFramebuffer: function (gl, width, height) {
+        // texture
+        let maskTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, maskTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
+        // render
+        let maskRenderBuffer = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, maskRenderBuffer);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
 
+        // frame
+        let maskFramebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, maskFramebuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, maskTexture, 0);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, maskRenderBuffer);
+
+        let e = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if(gl.FRAMEBUFFER_COMPLETE !== e) {
+            console.error("ERROR", e.toString());
+        }
+        // Unbind the buffer object
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+        return {
+            texture: maskTexture,
+            render: maskRenderBuffer,
+            frame: maskFramebuffer,
+            width: width,
+            height: height
+        };
+    },
+    deleteFramebuffer: function (gl, obj) {
+        if (obj.frame) gl.deleteFramebuffer(obj.frame);
+        if (obj.texture) gl.deleteTexture(obj.texture);
+        if (obj.render) gl.deleteRenderbuffer(obj.render);
+    },
+    getFramebufferTexture: function(gl) {
+        return gl.getFramebufferAttachmentParameter(gl.READ_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
+    },
 }
