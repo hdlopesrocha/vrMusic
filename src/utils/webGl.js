@@ -223,8 +223,8 @@ export default {
                 normals.push(x);
                 normals.push(0);
                 normals.push(z);
-                texture_coordinates.push(y);
-                texture_coordinates.push(2.0*a/definitionA);
+                texture_coordinates.push(y*0.5);
+                texture_coordinates.push(a/definitionA);
             }
         }
         for(let h=0; h < height; ++h){

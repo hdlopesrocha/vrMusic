@@ -322,6 +322,7 @@
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                         webGl.drawMesh(gl, programInfo, cylinderMesh, gl.TRIANGLES);
                     }
+
                 }
 
                 // **************

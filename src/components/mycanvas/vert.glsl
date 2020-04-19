@@ -40,12 +40,12 @@ void main(void) {
     else {
         mat4 viewProjectionMatrix = uProjectionMatrix * uViewMatrix;
         float saturation = 4.0;
+        vColor = vec4(1.0,1.0,1.0,1.0);
 
         if (uDrawMode == DRAW_MODE_CYLINDER) {
             float cx = aTextureCoordinates.x;
-            float cy = cos(aTextureCoordinates.y*PI);
-            float angle = abs(atan(vPosition.z, vPosition.x))/PI;
-            vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
+            float cy = cos(aTextureCoordinates.y*2.0*PI);
+            vec4 audio = texture(uAudioSampler, vec2(aTextureCoordinates.x, 0.0));
 
             float time = uTime+audio.x*2.0;
 
@@ -54,7 +54,7 @@ void main(void) {
             float colorFrequency = 0.2;// color is wider
             vec3 noiseColor = vec3(
                 noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
-                noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time))*saturation,
+                1.0,
                 1.0
             );
             vColor.xyz = hsv2rgb(noiseColor);
@@ -68,7 +68,7 @@ void main(void) {
                 noise(vec4(uDrawVariant, cx, cy, uTime*textureNoiseVelocity)*textureNoiseFrequency)
             );
 
-            vec2 textureVelocity = vec2(-1.0, 0.5);
+            vec2 textureVelocity = vec2(-0.5, 0.1);
             float textureRotation = 0.5;
             float textureWaveSize = 0.4;
 
@@ -99,7 +99,7 @@ void main(void) {
             float colorVelocity = 0.2;// color changes quicker
             float colorFrequency = 0.1;// color is wider
             vec3 noiseColor = vec3(
-                noise(1.0*vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
+                noise(1.0*vec4(cx*colorFrequency, cy*colorFrequency, time*colorVelocity, uDrawVariant)),
                 1.0,
                 1.0
             );

@@ -32,18 +32,7 @@ void main(void) {
         textureCoordinates.y = 1.0 - vTextureCoordinates.y;
     }
 
-    if (uDrawMode == 1){
-        float n = noise(vec4(textureCoordinates, 0.0, uTime*0.1));
-        vec2 p = 2.0*textureCoordinates - vec2(1.0, 1.0);
-        float pd = clamp(length(p), 0.0, 1.0);
-        float pr = 1.0 - pd*pd*pd;
-
-        float pc = clamp(pr*n+pr*0.25, 0.0, 1.0);
-        color = vec4(1.0, pc*2.0, 0.0, pc);
-    } else if (uDrawMode == DRAW_MODE_CYLINDER) {
-        vec4 c = texture(uSampler[0], textureCoordinates);
-        color = c*vColor;
-    } else if (uDrawMode == DRAW_MODE_2D_MIX) {
+    if (uDrawMode == DRAW_MODE_2D_MIX) {
         vec4 maskColor = texture(uSampler[1], textureCoordinates);
         if (maskColor.w > 0.0) {
             vec4 sum = vec4(0.0);
@@ -70,7 +59,7 @@ void main(void) {
     } else if (uDrawMode == DRAW_MODE_TORUS) {
         color = vColor;
     } else {
-        color = texture(uSampler[0], textureCoordinates);
+        color = texture(uSampler[0], textureCoordinates)*vColor;
     }
 
 
