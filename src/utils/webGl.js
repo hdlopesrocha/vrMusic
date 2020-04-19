@@ -274,7 +274,7 @@ export default {
         gl.disableVertexAttribArray(programInfo.attribLocations.vertexNormal);
         gl.disableVertexAttribArray(programInfo.attribLocations.textureCoordinates);
     },
-    drawMesh: function(gl, programInfo, mesh, image0, image1) {
+    drawMesh: function(gl, programInfo, mesh, mode,image0, image1) {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vb);
         gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
@@ -308,7 +308,7 @@ export default {
             gl.bindTexture(gl.TEXTURE_2D, image1);
         }
 
-        gl.drawElements(gl.TRIANGLES, mesh.ic, gl.UNSIGNED_SHORT, 0);
+        gl.drawElements(mode, mesh.ic, gl.UNSIGNED_SHORT, 0);
     },
     enableVr: function(state) {
         state.vrInit = true;

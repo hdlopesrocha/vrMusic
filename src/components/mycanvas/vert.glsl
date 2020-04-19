@@ -25,6 +25,7 @@ out vec4 vPosition;
 
 //#COMMON
 //#PERLIN
+//#HSL2RGB
 
 void main(void) {
     vec2 tTextureCoordinates = aTextureCoordinates;
@@ -38,7 +39,7 @@ void main(void) {
     }
     else {
         mat4 viewProjectionMatrix = uProjectionMatrix * uViewMatrix;
-
+        float saturation = 4.0;
 
         if (uDrawMode == DRAW_MODE_CYLINDER) {
             float cx = aTextureCoordinates.x;
@@ -51,13 +52,13 @@ void main(void) {
             // COLOR
             float colorVelocity = 0.5;// color changes quicker
             float colorFrequency = 0.2;// color is wider
-            vec4 noiseColor = vec4(
+            vec3 noiseColor = vec3(
                 noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
-                noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
-                noise(vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
-                0.0
+                noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time))*saturation,
+                1.0
             );
-            vColor = noiseColor;
+            vColor.xyz = hsv2rgb(noiseColor);
+            vColor.w = 1.0;
 
             // TEXTURE
             float textureNoiseVelocity = 0.2;
@@ -97,13 +98,14 @@ void main(void) {
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
             float colorFrequency = 0.1;// color is wider
-            vec4 noiseColor = vec4(
+            vec3 noiseColor = vec3(
                 noise(1.0*vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
-                noise(1.0*vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
-                noise(1.0*vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
-                0.0
+                noise(1.0*vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time))*saturation,
+                1.0
             );
-            vColor = noiseColor;
+
+            vColor.xyz = hsv2rgb(noiseColor);
+            vColor.w = 1.0;
         } else if (uDrawMode == DRAW_MODE_SKY) {
             float cx = 0.0;
             float cy = cos(aTextureCoordinates.y*PI);
@@ -114,13 +116,13 @@ void main(void) {
             // COLOR
             float colorVelocity = 0.5;// color changes quicker
             float colorFrequency = 1.0;// color is wider
-            vec4 noiseColor = vec4(
+            vec3 noiseColor = vec3(
                 noise(1.0*vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
-                noise(1.0*vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
-                noise(1.0*vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
-                0.0
+                noise(1.0*vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time))*saturation,
+                1.0
             );
-            vColor = noiseColor;
+            vColor.xyz = hsv2rgb(noiseColor);
+            vColor.w = 1.0;
         } else if (uDrawMode == DRAW_MODE_BILLBOARD) {
             float cx = aTextureCoordinates.x;
             float cy = aTextureCoordinates.y;
@@ -129,26 +131,38 @@ void main(void) {
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
             float colorFrequency = 0.1;// color is wider
-            vec4 noiseColor = vec4(
+            vec3 noiseColor = vec3(
                 noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
-                noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
-                noise(vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
-                0.0
+                noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time))*saturation,
+                1.0
             );
-            vColor = noiseColor;
+            vColor.xyz = hsv2rgb(noiseColor);
+            vColor.w = 1.0;
         } else if (uDrawMode == DRAW_MODE_TORUS) {
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
             vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
+            float cx = 0.0;
+            float cy = angle;
+            float time = uTime+audio.x;
 
-            vColor = audio;
+            // COLOR
+            float colorVelocity = 0.2;// color changes quicker
+            float colorFrequency = 100.0;// color is wider
+            vec3 noiseColor = vec3(
+                noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
+                1.0,
+                1.0
+            );
+            vColor.xyz = hsv2rgb(noiseColor);
+            vColor.w = 0.5;
 
             // POSITION
-            float displacementAmplitude = 16.0;
+            float displacementAmplitude = 8.0;
             float displacementFrequency = 0.1;
             float displacementVelocity = 2.0;
             vec4 displacement = displacementAmplitude * vec4(
                 0.0,
-                (audio.x+audio.z)-1.0,
+                (audio.x+audio.z*0.5)-1.0,
                 0.0,
                 0.0
             );

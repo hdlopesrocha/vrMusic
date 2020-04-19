@@ -21,6 +21,7 @@ out vec4 fragColor;
 
 //#COMMON
 //#PERLIN
+//#HSL2RGB
 
 void main(void) {
     vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
@@ -41,7 +42,7 @@ void main(void) {
         color = vec4(1.0, pc*2.0, 0.0, pc);
     } else if (uDrawMode == DRAW_MODE_CYLINDER) {
         vec4 c = texture(uSampler[0], textureCoordinates);
-        color = clamp(c+vec4(vColor.xyz, 0.0), 0.0, 1.0);
+        color = c*vColor;
     } else if (uDrawMode == DRAW_MODE_2D_MIX) {
         vec4 maskColor = texture(uSampler[1], textureCoordinates);
         if (maskColor.w > 0.0) {
@@ -68,7 +69,6 @@ void main(void) {
         return;
     } else if (uDrawMode == DRAW_MODE_TORUS) {
         color = vColor;
-      //  color.w = 0.1;
     } else {
         color = texture(uSampler[0], textureCoordinates);
     }
@@ -95,21 +95,17 @@ void main(void) {
         vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
         float edgeDot = abs(dot(vertexToCam, normal));
         if (edgeDot < 0.3) {
-            float minColor = 0.5;
-            vec3 c = vColor.xyz*8.0 + minColor;
-
-            fragColor.xyz = clamp(c, minColor, 1.0);
-            fragColor.w = 1.0;
+            fragColor = vColor;
         } else {
             fragColor = vec4(0.0, 0.0, 0.0, 0.01);
         }
     }
     if (uDrawMode == DRAW_MODE_SKY) {
         float gradient = 150.0;
-        fragColor.xyz += vColor.xyz*clamp(1.0 - abs(vPosition.y)/gradient, 0.0, 0.5);
+        fragColor.xyz *= vColor.xyz;
     }
 
     if (uDrawMode == DRAW_MODE_BILLBOARD) {
-        fragColor.xyz += vColor.xyz;
+        fragColor.xyz *= vColor.xyz;
     }
 }

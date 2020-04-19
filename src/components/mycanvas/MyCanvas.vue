@@ -1,9 +1,24 @@
 <template>
     <div>
         <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
-        <br>
-        <button v-on:click="enableVr">VR</button><button v-on:click="enableMic">Mic</button>
 
+        <table>
+            <tr>
+                <td>Step 1:</td>
+                <td>
+                    <button v-on:click="pickFile" >File</button>
+                    or
+                    <button v-on:click="enableMic">Mic</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Step 2:</td>
+                <td>
+                    <button v-on:click="enableVr" >Enter VR</button>
+                </td>
+            </tr>
+        </table>
+        <input id="file" ref="file" style="display: none" v-on:change="enableMusic" type="file" name="file" accept="audio/*">
     </div>
 </template>
 
@@ -24,6 +39,7 @@
     import vertexShader from 'raw-loader!./vert.glsl';
     import fragmentShader from 'raw-loader!./frag.glsl';
     import perlinShader from 'raw-loader!./perlin.glsl';
+    import hsl2rgbShader from 'raw-loader!./hsl2rgb.glsl';
     import commonShader from 'raw-loader!./common.glsl';
 
     import webGl from '../../utils/webGl'
@@ -73,6 +89,37 @@
                     navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(handleSound.bind(this));
                 }
             },
+            pickFile(){
+                this.$refs.file.click();
+            },
+            enableMusic(event){
+                this.audioContext = new AudioContext();
+                this.analyser = this.audioContext.createAnalyser();
+                this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
+                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                console.log(this);
+                webAudio.initializeArray(this.freqArray);
+                webAudio.initializeArray(this.dataArray);
+
+                let file = event.target.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.readAsArrayBuffer(file);
+                    reader.onload = function(e) {
+                        let data = e.target.result;
+                        this.audioContext.decodeAudioData(data, function(buffer) {
+                            console.log(this);
+                            this.source = this.audioContext.createBufferSource();
+                            this.source.buffer = buffer;
+                            this.source.loop = true;
+                            this.source.start(0);
+                            this.source.connect(this.analyser);
+                            this.analyser.connect(this.audioContext.destination);
+                        }.bind(this));
+                    }.bind(this);
+                }
+
+            }
         },
         mounted() {
             const canvas = document.querySelector('#glcanvas');
@@ -82,8 +129,15 @@
                 event.preventDefault();
             });
 
-            let fShader = fragmentShader.replace("//#PERLIN", perlinShader).replace("//#COMMON", commonShader);
-            let vShader = vertexShader.replace("//#PERLIN", perlinShader).replace("//#COMMON", commonShader);
+            let fShader = fragmentShader
+                .replace("//#PERLIN", perlinShader)
+                .replace("//#COMMON", commonShader)
+                .replace("//#HSL2RGB", hsl2rgbShader);
+            let vShader = vertexShader
+                .replace("//#PERLIN", perlinShader)
+                .replace("//#COMMON", commonShader)
+                .replace("//#HSL2RGB", hsl2rgbShader);
+
 
             const shaderProgram = webGl.initShaderProgram(gl, vShader, fShader);
             gl.useProgram(shaderProgram);
@@ -221,19 +275,19 @@
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
                     for (let mesh of spaceModel) {
-                        webGl.drawMesh(gl, programInfo, mesh);
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
                 }
 
                 // **********
                 // Draw torus
                 // **********
-                if(torusModel) {
+                if(torusModel && this.audioContext) {
                     let position = glm.vec3.fromValues(0, 0, 0);
                     glm.vec3.add(position, position, center);
                     glm.mat4.identity(modelMatrix);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(32, 4, 32));
+                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(32, 8.0, 32));
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -242,7 +296,7 @@
                     gl.enable(gl.CULL_FACE);
 
                     for (let mesh of torusModel) {
-                        webGl.drawMesh(gl, programInfo, mesh);
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
                 }
 
@@ -265,7 +319,7 @@
                         glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
                         gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                        webGl.drawMesh(gl, programInfo, cylinderMesh);
+                        webGl.drawMesh(gl, programInfo, cylinderMesh, gl.TRIANGLES);
                     }
                 }
 
@@ -290,7 +344,7 @@
 
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                         gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
-                        webGl.drawMesh(gl, programInfo, billboardMesh, flareTexture);
+                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, flareTexture);
                     }
                 }
 
@@ -310,7 +364,7 @@
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
                     for (let mesh of mandalaModel) {
-                        webGl.drawMesh(gl, programInfo, mesh);
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
                 }
 
@@ -334,7 +388,7 @@
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_MASK);
 
                     for (let mesh of statueModel) {
-                        webGl.drawMesh(gl, programInfo, mesh);
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
                 }
 
@@ -352,7 +406,7 @@
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    webGl.drawMesh(gl, programInfo, billboardMesh, drawFrameBuffer.texture, maskFrameBuffer.texture);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture, maskFrameBuffer.texture);
                 }
 
                 // ***************
@@ -374,7 +428,7 @@
 
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_EDGES);
                     for (let mesh of statueModel) {
-                        webGl.drawMesh(gl, programInfo, mesh);
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
                 }
 
@@ -392,7 +446,7 @@
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    webGl.drawMesh(gl, programInfo, billboardMesh, mixFrameBuffer.texture);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, mixFrameBuffer.texture);
                 }
                 // *****
                 // DEBUG
@@ -410,7 +464,7 @@
 
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
                         gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
-                        webGl.drawMesh(gl, programInfo, billboardMesh, audioTexture);
+                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, audioTexture);
                     }
 
                 }
@@ -430,7 +484,7 @@
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    webGl.drawMesh(gl, programInfo, billboardMesh, drawFrameBuffer.texture);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture);
                 }
             }
 
