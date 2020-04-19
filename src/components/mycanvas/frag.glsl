@@ -4,7 +4,6 @@ precision highp int;
 
 uniform int uDrawMode;
 uniform sampler2D uSampler[2];
-uniform sampler2D uAudioSampler;
 
 uniform bool uEnableLight;
 uniform float uTime;
@@ -27,11 +26,6 @@ void main(void) {
     vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
     vec2 textureCoordinates = vTextureCoordinates;
 
-
-    if (uDrawMode == DRAW_MODE_2D || uDrawMode == DRAW_MODE_2D_MIX) {
-        textureCoordinates.y = 1.0 - vTextureCoordinates.y;
-    }
-
     if (uDrawMode == DRAW_MODE_2D_MIX) {
         vec4 maskColor = texture(uSampler[1], textureCoordinates);
         if (maskColor.w > 0.0) {
@@ -52,16 +46,11 @@ void main(void) {
         }
         fragColor = color;
         return;
-    } else if (uDrawMode == DRAW_MODE_2D) {
-        color = texture(uSampler[0], textureCoordinates);
-        fragColor = color;
-        return;
     } else if (uDrawMode == DRAW_MODE_TORUS) {
         color = vColor;
     } else {
         color = texture(uSampler[0], textureCoordinates)*vColor;
     }
-
 
     vec3 normal = normalize(vNormal);
     if (uEnableLight) {
@@ -71,34 +60,18 @@ void main(void) {
         fragColor = color;
     }
 
-    if (uDrawMode == DRAW_MODE_MASK) {
+    if (uDrawMode == DRAW_MODE_MASK || uDrawMode == DRAW_MODE_EDGES) {
         vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
         float edgeDot = abs(dot(vertexToCam, normal));
-        if (edgeDot < 0.3) {
-            fragColor *= 0.0;
+        float edgeFactor = 0.3;
+        if (uDrawMode == DRAW_MODE_EDGES) {
+            fragColor = edgeDot < edgeFactor ? vColor: vec4(0.0);
+        }else {
+            fragColor = edgeDot < edgeFactor ? vec4(0.0) : fragColor;
         }
     }
 
-    if (uDrawMode == DRAW_MODE_EDGES) {
-
-        vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
-        float edgeDot = abs(dot(vertexToCam, normal));
-        if (edgeDot < 0.3) {
-            fragColor = vColor;
-        } else {
-            fragColor = vec4(0.0, 0.0, 0.0, 0.01);
-        }
-    }
-    if (uDrawMode == DRAW_MODE_SKY) {
-        float gradient = 150.0;
-        fragColor.xyz *= vColor.xyz;
-    }
-
-    if (uDrawMode == DRAW_MODE_BILLBOARD) {
-        fragColor.xyz *= vColor.xyz;
-    }
-
-    if (uDrawMode == DRAW_MODE_MANDALA) {
+    if (uDrawMode == DRAW_MODE_SKY || uDrawMode == DRAW_MODE_BILLBOARD || uDrawMode == DRAW_MODE_MANDALA) {
         fragColor.xyz *= vColor.xyz;
     }
 }

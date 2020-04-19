@@ -76,6 +76,8 @@
                 function handleSound(stream) {
                     this.audioContext = new AudioContext();
                     this.analyser = this.audioContext.createAnalyser();
+                    this.analyser.fftSize = 512;
+
                     this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
                     this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
                     console.log(this);
@@ -96,6 +98,7 @@
             enableMusic(event){
                 this.audioContext = new AudioContext();
                 this.analyser = this.audioContext.createAnalyser();
+                this.analyser.fftSize = 512;
                 this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
                 this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
                 console.log(this);

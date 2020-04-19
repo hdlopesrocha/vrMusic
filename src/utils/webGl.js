@@ -336,10 +336,10 @@ export default {
         gl.bindTexture(gl.TEXTURE_2D, texture);
 
         const level = 0;
-        const internalFormat = gl.RGB;
+        const internalFormat = gl.LUMINANCE;
         const height = 1;
         const border = 0;
-        const srcFormat = gl.RGB;
+        const srcFormat = gl.LUMINANCE;
         const srcType = gl.UNSIGNED_BYTE;
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, data);
 
