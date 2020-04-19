@@ -7,3 +7,4 @@
 #define DRAW_MODE_SKY 4
 #define DRAW_MODE_BILLBOARD 5
 #define DRAW_MODE_TORUS 6
+#define DRAW_MODE_MANDALA 7

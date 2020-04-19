@@ -33,6 +33,7 @@
     const DRAW_MODE_SKY = 4
     const DRAW_MODE_BILLBOARD = 5
     const DRAW_MODE_TORUS = 6
+    const DRAW_MODE_MANDALA = 7
     /* eslint-enable no-unused-vars */
 
 
@@ -359,7 +360,7 @@
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
                     glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_DEFAULT);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_MANDALA);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);

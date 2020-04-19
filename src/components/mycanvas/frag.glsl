@@ -108,4 +108,8 @@ void main(void) {
     if (uDrawMode == DRAW_MODE_BILLBOARD) {
         fragColor.xyz *= vColor.xyz;
     }
+
+    if (uDrawMode == DRAW_MODE_MANDALA) {
+        fragColor.xyz *= vColor.xyz;
+    }
 }

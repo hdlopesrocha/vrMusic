@@ -100,7 +100,7 @@ void main(void) {
             float colorFrequency = 0.1;// color is wider
             vec3 noiseColor = vec3(
                 noise(1.0*vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
-                noise(1.0*vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time))*saturation,
+                1.0,
                 1.0
             );
 
@@ -132,8 +132,24 @@ void main(void) {
             float colorVelocity = 0.2;// color changes quicker
             float colorFrequency = 0.1;// color is wider
             vec3 noiseColor = vec3(
-                noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
-                noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time))*saturation,
+            noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
+            1.0,
+            1.0
+            );
+            vColor.xyz = hsv2rgb(noiseColor);
+            vColor.w = 1.0;
+        } else if (uDrawMode == DRAW_MODE_MANDALA) {
+            vec4 audio = texture(uAudioSampler, vec2(0.0, 0.0));
+            float cx = aTextureCoordinates.x;
+            float cy = aTextureCoordinates.y;
+            float time = uTime+audio.x*4.0;
+
+            // COLOR
+            float colorVelocity = 0.2;// color changes quicker
+            float colorFrequency = 32.0;// color is wider
+            vec3 noiseColor = vec3(
+                noise(vec4(cx*colorFrequency, cy*colorFrequency, time*colorVelocity, uDrawVariant)),
+                1.0,
                 1.0
             );
             vColor.xyz = hsv2rgb(noiseColor);
