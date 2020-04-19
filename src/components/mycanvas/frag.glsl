@@ -3,8 +3,8 @@ precision highp float;
 precision highp int;
 
 uniform int uDrawMode;
-uniform sampler2D uSampler0;
-uniform sampler2D uSampler1;
+uniform sampler2D uSampler[2];
+uniform sampler2D uAudioSampler;
 
 uniform bool uEnableLight;
 uniform float uTime;
@@ -40,10 +40,10 @@ void main(void) {
         float pc = clamp(pr*n+pr*0.25, 0.0, 1.0);
         color = vec4(1.0, pc*2.0, 0.0, pc);
     } else if (uDrawMode == DRAW_MODE_CYLINDER) {
-        vec4 c = texture(uSampler0, textureCoordinates);
+        vec4 c = texture(uSampler[0], textureCoordinates);
         color = clamp(c+vec4(vColor.xyz, 0.0), 0.0, 1.0);
     } else if (uDrawMode == DRAW_MODE_2D_MIX) {
-        vec4 maskColor = texture(uSampler1, textureCoordinates);
+        vec4 maskColor = texture(uSampler[1], textureCoordinates);
         if (maskColor.w > 0.0) {
             vec4 sum = vec4(0.0);
             vec2 delta = 1.0/uCanvasSize;
@@ -51,7 +51,7 @@ void main(void) {
             int size = 3;
             for (int i=-size; i <= size; ++i) {
                 for (int j=-size; j <= size; ++j) {
-                    sum += texture(uSampler0, textureCoordinates+delta*vec2(i, j));
+                    sum += texture(uSampler[0], textureCoordinates+delta*vec2(i, j));
                     ++count;
                 }
             }
@@ -63,16 +63,14 @@ void main(void) {
         fragColor = color;
         return;
     } else if (uDrawMode == DRAW_MODE_2D) {
-        color = texture(uSampler0, textureCoordinates);
+        color = texture(uSampler[0], textureCoordinates);
         fragColor = color;
         return;
     } else if (uDrawMode == DRAW_MODE_TORUS) {
-        float minColor = 0.5;
-        vec3 c = vColor.xyz*8.0 + minColor;
-        color.xyz = clamp(c, minColor, 1.0);
-        color.w = 1.0;
+        color = vColor;
+      //  color.w = 0.1;
     } else {
-        color = texture(uSampler0, textureCoordinates);
+        color = texture(uSampler[0], textureCoordinates);
     }
 
 

@@ -28,10 +28,10 @@
 
     import webGl from '../../utils/webGl'
     import webAudio from '../../utils/webAudio';
+    import perlin from '../../utils/perlin';
 
     import * as glm from 'gl-matrix'
     import GLTFLoader from 'three-gltf-loader';
-
     export default {
         name: "WebGl",
 
@@ -47,9 +47,8 @@
                 analyser: null,
                 freqArray: null,
                 dataArray: null,
-                freqNormalized: null,
-                dataNormalized: null,
-                timeDisplacement: 0
+                audioArray: null,
+                timeDisplacement: 0,
             }
         },
         methods: {
@@ -58,19 +57,21 @@
             },
             enableMic() {
                 function handleSound(stream) {
-                    console.log(this);
                     this.audioContext = new AudioContext();
                     this.analyser = this.audioContext.createAnalyser();
-                    this.freqArray = new Float32Array(this.analyser.frequencyBinCount);
+                    this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
                     this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                    console.log(this);
                     webAudio.initializeArray(this.freqArray);
                     webAudio.initializeArray(this.dataArray);
                     this.source = this.audioContext.createMediaStreamSource(stream);
                     this.source.connect(this.analyser);
                     this.isPlaying = true;
                 }
-                navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
-                navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(handleSound.bind(this));
+                if(!this.audioContext) {
+                    navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+                    navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(handleSound.bind(this));
+                }
             },
         },
         mounted() {
@@ -106,6 +107,11 @@
             let cylinderMesh = webGl.getCylinderMesh(gl, patternTexture);
             let flareTexture = webGl.loadTexture(gl, "models/flare.png");
             let billboardMesh = webGl.createBillboard(gl);
+            let audioTexture = gl.createTexture();
+
+
+
+            perlin.noise.seed(Math.random());
 
             const loader = new GLTFLoader();
             loader.load("models/ganesha.gltf", gltf => {
@@ -124,10 +130,11 @@
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
                 if(this.audioContext) {
-                    const maxFreq = 22050;
-                    this.freqNormalized = webAudio.updateFrequencyArray(this.analyser, this.freqArray, maxFreq);
-                    this.dataNormalized = webAudio.updateDataArray(this.analyser, this.dataArray);
-                    this.timeDisplacement = this.freqNormalized[0].y;
+                    const len = this.dataArray.length;
+                    this.audioArray = webAudio.updateAudioArray(this.analyser, len, this.dataArray, this.freqArray, perlin.noise, state.time*0.05);
+                    webGl.loadAudio(gl,audioTexture, len, this.audioArray);
+                    webGl.bindAudioTexture(gl, programInfo, audioTexture);
+                    this.timeDisplacement = 0.0;
                 }
             }
 
@@ -200,7 +207,7 @@
                 gl.uniform3fv(programInfo.uniformLocations.cameraPosition, cameraPosition);
 
                 let modelMatrix = glm.mat4.create();
-                let center = glm.vec3.fromValues(0,0,-5);
+                let center = glm.vec3.fromValues(0,0,-6);
 
                 // **********
                 // Draw space
@@ -239,29 +246,6 @@
                     }
                 }
 
-                // **************
-                // Draw billboard
-                // **************
-                {
-                    //let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
-                    let up = glm.vec3.fromValues(0, 1, 0);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_BILLBOARD);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    variant = 0;
-                    for (let i = 0; i < 2.0 * Math.PI; i += Math.PI / 8.0) {
-                        let r = 32.0;
-                        let position = glm.vec3.fromValues(r * Math.cos(i), 8 * Math.sin(state.time + variant), r * Math.sin(i));
-                        modelMatrix = webGl.getBillboardMatrix(position, cameraPosition, up);
-                        glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(2, 2, 2));
-
-                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
-                        webGl.drawMesh(gl, programInfo, billboardMesh, flareTexture);
-                    }
-                }
-
                 // *************
                 // Draw cylinder
                 // *************
@@ -285,6 +269,30 @@
                     }
                 }
 
+                // **************
+                // Draw billboard
+                // **************
+                {
+                    //let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
+                    let up = glm.vec3.fromValues(0, 1, 0);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_BILLBOARD);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    variant = 0;
+                    for (let i = 0; i < 2.0 * Math.PI; i += Math.PI / 8.0) {
+                        let r = 4.0;
+                        let position = glm.vec3.fromValues(r * Math.cos(i), 8.0+Math.sin(state.time*4.0 + i*2.0), r * Math.sin(i));
+                        glm.vec3.add(position, position, center);
+
+                        modelMatrix = webGl.getBillboardMatrix(position, cameraPosition, up);
+                        glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(2, 2, 2));
+
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
+                        webGl.drawMesh(gl, programInfo, billboardMesh, flareTexture);
+                    }
+                }
 
                 // ************
                 // Draw mandala
@@ -386,7 +394,26 @@
 
                     webGl.drawMesh(gl, programInfo, billboardMesh, mixFrameBuffer.texture);
                 }
+                // *****
+                // DEBUG
+                // *****
+                let debug = false;
+                if(debug && billboardMesh){
+                    let up = glm.vec3.fromValues(0, 1, 0);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_DEFAULT);
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    {
+                        let modelMatrix2 = webGl.getBillboardMatrix(glm.vec3.fromValues(2,0,-5), cameraPosition, up);
+                        glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
 
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
+                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
+                        webGl.drawMesh(gl, programInfo, billboardMesh, audioTexture);
+                    }
+
+                }
                 // ****************
                 // DRAW FRAMEBUFFER
                 // ****************

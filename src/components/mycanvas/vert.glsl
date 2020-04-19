@@ -8,6 +8,7 @@ in vec2 aTextureCoordinates;
 
 uniform int uDrawMode;
 uniform float uDrawVariant;
+uniform sampler2D uAudioSampler;
 
 uniform mat4 uViewMatrix;
 uniform mat4 uOrthoMatrix;
@@ -42,7 +43,10 @@ void main(void) {
         if (uDrawMode == DRAW_MODE_CYLINDER) {
             float cx = aTextureCoordinates.x;
             float cy = cos(aTextureCoordinates.y*PI);
-            float time = uTime;
+            float angle = abs(atan(vPosition.z, vPosition.x))/PI;
+            vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
+
+            float time = uTime+audio.x*2.0;
 
             // COLOR
             float colorVelocity = 0.5;// color changes quicker
@@ -59,8 +63,8 @@ void main(void) {
             float textureNoiseVelocity = 0.2;
             float textureNoiseFrequency = 0.5;
             vec2 noiseTexture = vec2(
-                noise(vec4(cx, cy, time*textureNoiseVelocity, uDrawVariant)*textureNoiseFrequency),
-                noise(vec4(uDrawVariant, cx, cy, time*textureNoiseVelocity)*textureNoiseFrequency)
+                noise(vec4(cx, cy, uTime*textureNoiseVelocity, uDrawVariant)*textureNoiseFrequency),
+                noise(vec4(uDrawVariant, cx, cy, uTime*textureNoiseVelocity)*textureNoiseFrequency)
             );
 
             vec2 textureVelocity = vec2(-1.0, 0.5);
@@ -76,16 +80,19 @@ void main(void) {
             float displacementFrequency = 0.05;
             float displacementVelocity = 0.05;
             vec4 displacement = displacementAmplitude * vec4(
-                noise(vec4(uDrawVariant, vPosition.y*displacementFrequency, 0.0, uTime*displacementVelocity)),
+                noise(vec4(uDrawVariant, vPosition.y*displacementFrequency, 0.0, time*displacementVelocity)),
                 0.0,
-                noise(vec4(uDrawVariant, 0.0, vPosition.y*displacementFrequency, uTime*displacementVelocity)),
+                noise(vec4(uDrawVariant, 0.0, vPosition.y*displacementFrequency, time*displacementVelocity)),
                 0.0
             );
             vPosition += displacement;
         } else if (uDrawMode == DRAW_MODE_EDGES) {
             float cx = aTextureCoordinates.x;
             float cy = cos(aTextureCoordinates.y*PI);
-            float time = uTime;
+            vec4 audio = texture(uAudioSampler, vec2(cx, 0.0));
+
+            float time = uTime+audio.x*4.0;
+
 
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
@@ -100,7 +107,9 @@ void main(void) {
         } else if (uDrawMode == DRAW_MODE_SKY) {
             float cx = 0.0;
             float cy = cos(aTextureCoordinates.y*PI);
-            float time = uTime;
+            vec4 audio = texture(uAudioSampler, vec2(cy, 0.0));
+
+            float time = uTime+audio.x;
 
             // COLOR
             float colorVelocity = 0.5;// color changes quicker
@@ -128,28 +137,18 @@ void main(void) {
             );
             vColor = noiseColor;
         } else if (uDrawMode == DRAW_MODE_TORUS) {
-            float cx = aTextureCoordinates.x;
-            float cy = cos(aTextureCoordinates.y*PI);
-            float time = uTime;
+            float angle = abs(atan(vPosition.z, vPosition.x))/PI;
+            vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
 
-            // COLOR
-            float colorVelocity = 0.5;// color changes quicker
-            float colorFrequency = 0.1;// color is wider
-            vec4 noiseColor = vec4(
-                noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
-                noise(vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time)),
-                noise(vec4(cx*colorFrequency, cy, uDrawVariant, colorVelocity*time)),
-                0.0
-            );
-            vColor = noiseColor;
+            vColor = audio;
 
             // POSITION
-            float displacementAmplitude = 8.0;
+            float displacementAmplitude = 16.0;
             float displacementFrequency = 0.1;
             float displacementVelocity = 2.0;
             vec4 displacement = displacementAmplitude * vec4(
                 0.0,
-                noise(vec4(uDrawVariant, vPosition.x*displacementFrequency, vPosition.z*displacementFrequency, uTime*displacementVelocity)),
+                (audio.x+audio.z)-1.0,
                 0.0,
                 0.0
             );

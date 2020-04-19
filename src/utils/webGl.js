@@ -153,8 +153,10 @@ export default {
                 viewMatrix: gl.getUniformLocation(shaderProgram, 'uViewMatrix'),
                 modelMatrix: gl.getUniformLocation(shaderProgram, 'uModelMatrix'),
                 orthoMatrix: gl.getUniformLocation(shaderProgram, 'uOrthoMatrix'),
-                sampler0: gl.getUniformLocation(shaderProgram, 'uSampler0'),
-                sampler1: gl.getUniformLocation(shaderProgram, 'uSampler1'),
+                sampler: [
+                    gl.getUniformLocation(shaderProgram, 'uSampler[0]'),
+                    gl.getUniformLocation(shaderProgram, 'uSampler[1]'),
+                ],
                 enableLight: gl.getUniformLocation(shaderProgram, 'uEnableLight'),
                 drawMode: gl.getUniformLocation(shaderProgram, 'uDrawMode'),
                 drawVariant: gl.getUniformLocation(shaderProgram, 'uDrawVariant'),
@@ -162,6 +164,7 @@ export default {
                 lightDirection: gl.getUniformLocation(shaderProgram, 'uLightDirection'),
                 cameraPosition: gl.getUniformLocation(shaderProgram, 'uCameraPosition'),
                 canvasSize: gl.getUniformLocation(shaderProgram, 'uCanvasSize'),
+                audioSampler: gl.getUniformLocation(shaderProgram, 'uAudioSampler'),
             },
         };
     },
@@ -295,12 +298,12 @@ export default {
         }
 
         if(image0) {
-            gl.uniform1i(programInfo.uniformLocations.sampler0, 0);
+            gl.uniform1i(programInfo.uniformLocations.sampler[0], 0);
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, image0);
         }
         if(image1) {
-            gl.uniform1i(programInfo.uniformLocations.sampler1, 1);
+            gl.uniform1i(programInfo.uniformLocations.sampler[1], 1);
             gl.activeTexture(gl.TEXTURE1);
             gl.bindTexture(gl.TEXTURE_2D, image1);
         }
@@ -323,6 +326,30 @@ export default {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
+    },
+    bindAudioTexture: function(gl, programInfo, texture){
+        gl.uniform1i(programInfo.uniformLocations.audioSampler, 2);
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+    },
+    loadAudio(gl, texture, width, data) {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+
+        const level = 0;
+        const internalFormat = gl.RGB;
+        const height = 1;
+        const border = 0;
+        const srcFormat = gl.RGB;
+        const srcType = gl.UNSIGNED_BYTE;
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, data);
+
+        //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
     },
     loadImage: function(gl, image){
         const texture = gl.createTexture();
