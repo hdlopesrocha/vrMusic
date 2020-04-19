@@ -176,6 +176,22 @@ void main(void) {
                 0.0
             );
             vPosition += displacement;
+        } else if (uDrawMode == DRAW_MODE_CUBE) {
+            float angle = abs(atan(vPosition.z, vPosition.x))/PI;
+            vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
+            float cx = 0.0;
+            float cy = angle;
+            float time = uTime+audio.x;
+
+            // COLOR
+            float colorVelocity = 0.2;// color changes quicker
+            float colorFrequency = 100.0;// color is wider
+            vColor.xyz = hsv2rgb(
+                noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
+                1.0,
+                1.0
+            );
+            vColor.w = 1.0;
         }
 
         mat3 vNormalMatrix = transpose(inverse(mat3(uModelMatrix)));

@@ -34,6 +34,7 @@
     const DRAW_MODE_BILLBOARD = 5
     const DRAW_MODE_TORUS = 6
     const DRAW_MODE_MANDALA = 7
+    const DRAW_MODE_CUBE = 8
     /* eslint-enable no-unused-vars */
 
 
@@ -64,8 +65,8 @@
                 analyser: null,
                 freqArray: null,
                 dataArray: null,
-                audioArray: null,
                 timeDisplacement: 0,
+                fftSize: 512
             }
         },
         methods: {
@@ -76,13 +77,8 @@
                 function handleSound(stream) {
                     this.audioContext = new AudioContext();
                     this.analyser = this.audioContext.createAnalyser();
-                    this.analyser.fftSize = 512;
+                    this.analyser.fftSize = this.fftSize;
 
-                    this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
-                    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-                    console.log(this);
-                    webAudio.initializeArray(this.freqArray);
-                    webAudio.initializeArray(this.dataArray);
                     this.source = this.audioContext.createMediaStreamSource(stream);
                     this.source.connect(this.analyser);
                     this.isPlaying = true;
@@ -98,12 +94,7 @@
             enableMusic(event){
                 this.audioContext = new AudioContext();
                 this.analyser = this.audioContext.createAnalyser();
-                this.analyser.fftSize = 512;
-                this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
-                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-                console.log(this);
-                webAudio.initializeArray(this.freqArray);
-                webAudio.initializeArray(this.dataArray);
+                this.analyser.fftSize = this.fftSize;
 
                 let file = event.target.files[0];
                 if (file) {
@@ -112,7 +103,6 @@
                     reader.onload = function(e) {
                         let data = e.target.result;
                         this.audioContext.decodeAudioData(data, function(buffer) {
-                            console.log(this);
                             this.source = this.audioContext.createBufferSource();
                             this.source.buffer = buffer;
                             this.source.loop = true;
@@ -160,6 +150,7 @@
             let statueModel = null;
             let spaceModel = null;
             let torusModel = null;
+            let cubeModel = null;
 
             let patternTexture = webGl.loadTexture(gl, "models/pattern.png");
             let cylinderMesh = webGl.getCylinderMesh(gl, patternTexture);
@@ -167,7 +158,10 @@
             let billboardMesh = webGl.createBillboard(gl);
             let audioTexture = gl.createTexture();
 
-
+            this.freqArray = new Uint8Array(this.fftSize);
+            this.dataArray = new Uint8Array(this.fftSize);
+            webAudio.initializeArray(this.freqArray);
+            webAudio.initializeArray(this.dataArray);
 
             perlin.noise.seed(Math.random());
 
@@ -184,13 +178,17 @@
             loader.load("models/torus.gltf", gltf => {
                 torusModel = webGl.getModel(gl, gltf);
             });
-
+            loader.load("models/cube.gltf", gltf => {
+                cubeModel = webGl.getModel(gl, gltf);
+            });
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
                 if(this.audioContext) {
                     const len = this.dataArray.length;
-                    this.audioArray = webAudio.updateAudioArray(this.analyser, len, this.dataArray, this.freqArray, perlin.noise, state.time*0.05);
-                    webGl.loadAudio(gl,audioTexture, len, this.audioArray);
+                    if (this.analyser) {
+                        this.analyser.getByteTimeDomainData(this.dataArray);
+                    }
+                    webGl.loadAudio(gl,audioTexture, len, this.dataArray);
                     webGl.bindAudioTexture(gl, programInfo, audioTexture);
                     this.timeDisplacement = 0.0;
                 }
@@ -286,7 +284,7 @@
                 // **********
                 // Draw torus
                 // **********
-                if(torusModel && this.audioContext) {
+                if(torusModel) {
                     let position = glm.vec3.fromValues(0, 0, 0);
                     glm.vec3.add(position, position, center);
                     glm.mat4.identity(modelMatrix);
@@ -302,6 +300,47 @@
                     for (let mesh of torusModel) {
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
+                }
+
+                // **********
+                // Draw cubes
+                // **********
+                if(cubeModel) {
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_CUBE);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+
+                    let size = 1;
+                    let distance = 64;
+                    for(let i = -size; i <= size; ++i) {
+                        for(let j = -size; j <= size; ++j) {
+                            for(let k = -size; k <= size; ++k) {
+                                if(Math.abs(i) === size || Math.abs(j) === size || Math.abs(k) === size) {
+                                    let noise = (webAudio.myNoise3dx(perlin.noise, state.time+i, state.time+j , state.time+k, 4.0)*0.2+ 0.8*this.dataArray[0]/255);
+
+                                    let position = glm.vec3.fromValues(i, j, k);
+                                    let direction = glm.vec3.create();
+
+                                    glm.vec3.normalize(direction, position);
+                                    glm.vec3.scale(position,direction,distance - noise * distance);
+                                    glm.vec3.add(position, position, center);
+                                    glm.mat4.identity(modelMatrix);
+                                    glm.mat4.translate(modelMatrix, modelMatrix, position);
+                                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(1.0, 1.0, 1.0));
+                                    glm.mat4.rotate(modelMatrix, modelMatrix, noise*Math.PI*2.0, direction);
+
+                                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                                    for (let mesh of cubeModel) {
+                                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+
                 }
 
                 // *************

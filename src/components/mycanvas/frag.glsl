@@ -32,7 +32,7 @@ void main(void) {
             vec4 sum = vec4(0.0);
             vec2 delta = 1.0/uCanvasSize;
             int count = 0;
-            int size = 3;
+            int size = 8;
             for (int i=-size; i <= size; ++i) {
                 for (int j=-size; j <= size; ++j) {
                     sum += texture(uSampler[0], textureCoordinates+delta*vec2(i, j));
