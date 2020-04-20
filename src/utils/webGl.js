@@ -7,7 +7,7 @@ export default {
     WHITE: glm.vec4.fromValues(1.0, 1.0, 1.0, 1.0),
     BLACK: glm.vec4.fromValues(0.0, 0.0, 0.0, 1.0),
 
-    initShaderProgram: function(gl, vsSource, fsSource) {
+    initShaderProgram: function (gl, vsSource, fsSource) {
         const vertexShader = this.loadShader(gl, gl.VERTEX_SHADER, vsSource);
         const fragmentShader = this.loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
 
@@ -23,7 +23,7 @@ export default {
 
         return shaderProgram;
     },
-    loadShader: function(gl, type, source) {
+    loadShader: function (gl, type, source) {
         const shader = gl.createShader(type);
 
         gl.shaderSource(shader, source);
@@ -37,11 +37,12 @@ export default {
 
         return shader;
     },
-    createState: function(cleanDrawback, drawCallback, updateCallback) {
-        return  {
+    createState: function (cleanDrawback, drawCallback, updateCallback) {
+        return {
             time: 0,
             delta: 0,
             vrInitialized: false,
+            vrToggle: false,
             vrSession: null,
             vrSpace: null,
             animation: null,
@@ -50,7 +51,7 @@ export default {
             updateCallback: updateCallback,
             vrSupported: false,
             map: {},
-            tick: function(now){
+            tick: function (now) {
                 now *= 0.001;  // convert to seconds
                 this.delta = now - this.time;
                 this.time = now;
@@ -58,33 +59,8 @@ export default {
             log: '',
         };
     },
-    loopVr: function(gl, state) {
+    loop: function (gl, state) {
         let that = this;
-        function render(now, frame) {
-            let session = frame.session;
-            if(state.vrInitialized) {
-                state.animation = session.requestAnimationFrame(render);
-            }
-
-            let pose = null;
-            if (state.vrSpace && frame) {
-                pose = frame.getViewerPose(state.vrSpace);
-            }
-
-            state.tick(now);
-            state.updateCallback(gl, state);
-
-            if (pose) {
-                let layer = session ? session.renderState.baseLayer : null;
-                state.cleanDrawback(gl, layer.framebuffer, that.TRANSPARENT);
-
-                for (let i in pose.views) {
-                    let view = pose.views[i];
-                    let viewport = layer.getViewport(view);
-                    state.drawCallback(gl, viewport, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer, i);
-                }
-            }
-        }
 
         // eslint-disable-next-line no-unused-vars
         function onSessionEnded(event) {
@@ -101,52 +77,73 @@ export default {
                 state.vrSession = session;
                 console.log(space);
                 // state.vrSpace =  space.getOffsetReferenceSpace(new XRRigidTransform(glm.vec3.fromValues(0,-1.60,0), glm.quat.create()) );
-                state.vrSpace =  space;
+                state.vrSpace = space;
                 state.animation = session.requestAnimationFrame(render);
             });
             console.log(session);
             return session;
         }
 
-        if(!state.vrInitialized) {
-            state.vrInitialized = true;
-            new WebXRPolyfill();
-            if (navigator.xr) {
-                navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
-                    state.vrSupported = supported;
-                    navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
-                });
+        function render(now, frame) {
+            if (state.vrToggle) {
+                state.vrToggle = false;
+                if (!state.vrInitialized) {
+                    state.vrInitialized = true;
+                    new WebXRPolyfill();
+                    if (navigator.xr) {
+                        navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+                            state.vrSupported = supported;
+                            navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
+                        });
+                    }
+                }
             }
-        }
-    },
-    loop: function(gl, state) {
-        let that = this;
-        function render(now) {
-            if(!state.vrInitialized) {
+            let pose = null;
+            let session = null;
+
+            if (state.vrInitialized) {
+                session = frame.session;
+                state.animation = session.requestAnimationFrame(render);
+                if (state.vrSpace && frame) {
+                    pose = frame.getViewerPose(state.vrSpace);
+                }
+            } else {
                 state.animation = requestAnimationFrame(render);
             }
 
             state.tick(now);
             state.updateCallback(gl, state);
-            state.cleanDrawback(gl, null, that.TRANSPARENT)
-            let viewport = {
-                width: gl.canvas.width,
-                height: gl.canvas.height,
-                x: 0,
-                y: 0,
-            }
-            //console.log(viewport);
-            if(viewport.width && viewport.height) {
-                state.drawCallback(gl, viewport, state, null, null, null, 0);
-            }
 
+            if (state.vrInitialized) {
+                if (pose) {
+                    let layer = session ? session.renderState.baseLayer : null;
+                    state.cleanDrawback(gl, layer.framebuffer, that.TRANSPARENT);
+                    for (let i in pose.views) {
+                        let view = pose.views[i];
+                        let viewport = layer.getViewport(view);
+                        state.drawCallback(gl, viewport, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer, i + 1);
+                    }
+                }
+            } else {
+                let viewport = {
+                    width: gl.canvas.width,
+                    height: gl.canvas.height,
+                    x: 0,
+                    y: 0,
+                }
+                if (viewport.width && viewport.height) {
+                    state.cleanDrawback(gl, null, that.TRANSPARENT)
+                    state.drawCallback(gl, viewport, state, null, null, null, 0);
+                }
+            }
         }
+
         state.animation = requestAnimationFrame(render);
     },
-    getProgramInfo: function(gl, shaderProgram){
+    getProgramInfo: function (gl, shaderProgram) {
         return {
             program: shaderProgram,
-                time: 0,
+            time: 0,
             attribLocations: {
                 vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
                 vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
@@ -172,7 +169,7 @@ export default {
             },
         };
     },
-    createArrayBuffers: function(gl, vertices, normals, texture_coordinates, indices, image){
+    createArrayBuffers: function (gl, vertices, normals, texture_coordinates, indices, image) {
         let indices_count = indices.length;
 
         let vertex_buffer = gl.createBuffer();
@@ -188,7 +185,7 @@ export default {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texture_coordinates), gl.STATIC_DRAW);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-        return  {
+        return {
             ic: indices_count,
             vb: vertex_buffer,
             nb: normal_buffer,
@@ -197,14 +194,14 @@ export default {
             im: image
         };
     },
-    createBillboard: function(gl) {
+    createBillboard: function (gl) {
         let vertices = [1, -1, 0, 1, 1, 0, -1, 1, 0, -1, -1, 0];
         let normals = [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1];
         let texture_coordinates = [1, 1, 1, 0, 0, 0, 0, 1];
         let indices = [0, 1, 2, 0, 2, 3];
         return this.createArrayBuffers(gl, vertices, normals, texture_coordinates, indices, null);
     },
-    getCylinderMesh: function(gl, image) {
+    getCylinderMesh: function (gl, image) {
         let vertices = [];
         let normals = [];
         let texture_coordinates = [];
@@ -216,49 +213,49 @@ export default {
         // eslint-disable-next-line no-unused-vars
         const definitionH = 0.5;
 
-        for(let h=0; h <= height; ++h){
-            for(let a=0; a <= definitionA; ++a){
-                let x = Math.sin((2*Math.PI*a/definitionA) );
-                let y = h*definitionH;
-                let z = Math.cos((2*Math.PI*a/definitionA) );
+        for (let h = 0; h <= height; ++h) {
+            for (let a = 0; a <= definitionA; ++a) {
+                let x = Math.sin((2 * Math.PI * a / definitionA));
+                let y = h * definitionH;
+                let z = Math.cos((2 * Math.PI * a / definitionA));
                 vertices.push(x);
                 vertices.push(y);
                 vertices.push(z);
                 normals.push(x);
                 normals.push(0);
                 normals.push(z);
-                texture_coordinates.push(y*0.5);
-                texture_coordinates.push(a/definitionA);
+                texture_coordinates.push(y * 0.5);
+                texture_coordinates.push(a / definitionA);
             }
         }
-        for(let h=0; h < height; ++h){
-            for(let a=0; a < definitionA; ++a){
-                indices.push((h+0)*(definitionA+1)+(a+0));
-                indices.push((h+0)*(definitionA+1)+(a+1));
-                indices.push((h+1)*(definitionA+1)+(a+1));
+        for (let h = 0; h < height; ++h) {
+            for (let a = 0; a < definitionA; ++a) {
+                indices.push((h + 0) * (definitionA + 1) + (a + 0));
+                indices.push((h + 0) * (definitionA + 1) + (a + 1));
+                indices.push((h + 1) * (definitionA + 1) + (a + 1));
 
-                indices.push((h+0)*(definitionA+1)+(a+0));
-                indices.push((h+1)*(definitionA+1)+(a+1));
-                indices.push((h+1)*(definitionA+1)+(a+0));
+                indices.push((h + 0) * (definitionA + 1) + (a + 0));
+                indices.push((h + 1) * (definitionA + 1) + (a + 1));
+                indices.push((h + 1) * (definitionA + 1) + (a + 0));
             }
         }
         return this.createArrayBuffers(gl, vertices, normals, texture_coordinates, indices, image);
     },
-    getMesh: function(gl, mesh) {
+    getMesh: function (gl, mesh) {
         let geometry = mesh.geometry;
-        if(!geometry || !geometry.attributes) {
+        if (!geometry || !geometry.attributes) {
             return null;
         }
 
         let vertices = geometry.attributes.position.array;
-        let normals =  geometry.attributes.normal.array;
-        let texture_coordinates =  geometry.attributes.uv.array;
+        let normals = geometry.attributes.normal.array;
+        let texture_coordinates = geometry.attributes.uv.array;
         let indices = geometry.index.array;
         let image = mesh.material.map ? mesh.material.map.image : null;
 
         return this.createArrayBuffers(gl, vertices, normals, texture_coordinates, indices, image ? this.loadImage(gl, image) : null);
     },
-    getModel(gl, gltf){
+    getModel(gl, gltf) {
         let group = [];
         for (let c of gltf.scene.children) {
             let m = this.getMesh(gl, c);
@@ -268,12 +265,12 @@ export default {
         }
         return group;
     },
-    enableAttribs: function(gl, programInfo){
+    enableAttribs: function (gl, programInfo) {
         gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
         gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
         gl.enableVertexAttribArray(programInfo.attribLocations.textureCoordinates);
     },
-    disableAttribs: function(gl, programInfo){
+    disableAttribs: function (gl, programInfo) {
         gl.disableVertexAttribArray(programInfo.attribLocations.vertexPosition);
         gl.disableVertexAttribArray(programInfo.attribLocations.vertexNormal);
         gl.disableVertexAttribArray(programInfo.attribLocations.textureCoordinates);
@@ -283,7 +280,7 @@ export default {
         gl.activeTexture(gl.TEXTURE0 + position);
         gl.bindTexture(gl.TEXTURE_2D, texture);
     },
-    drawMesh: function(gl, programInfo, mesh, mode,image0, image1) {
+    drawMesh: function (gl, programInfo, mesh, mode, image0, image1) {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vb);
         gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
@@ -296,32 +293,32 @@ export default {
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ib);
 
-        if(!image0) {
+        if (!image0) {
             image0 = mesh.im;
         }
-        if(!image0) {
+        if (!image0) {
             image0 = 0;
         }
-        if(!image1) {
+        if (!image1) {
             image1 = image0;
         }
 
-        if(image0) {
+        if (image0) {
             this.bindTexture(gl, programInfo.uniformLocations.sampler[0], 0, image0);
         }
-        if(image1) {
+        if (image1) {
             this.bindTexture(gl, programInfo.uniformLocations.sampler[1], 1, image1);
         }
 
         gl.drawElements(mode, mesh.ic, gl.UNSIGNED_SHORT, 0);
     },
-    enableVr: function(state) {
+    enableVr: function (state) {
         state.vrInit = true;
     },
-    isPowerOf2: function(value) {
+    isPowerOf2: function (value) {
         return (value & (value - 1)) === 0;
     },
-    generateMipmap: function(gl, image) {
+    generateMipmap: function (gl, image) {
         if (this.isPowerOf2(image.width) && this.isPowerOf2(image.height)) {
             gl.generateMipmap(gl.TEXTURE_2D);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
@@ -332,7 +329,7 @@ export default {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
     },
-    initializeTexture(gl , texture) {
+    initializeTexture(gl, texture) {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         const pixel = new Uint8Array([0]);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 1, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, pixel);
@@ -355,7 +352,7 @@ export default {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
     },
-    loadImage: function(gl, image){
+    loadImage: function (gl, image) {
         const texture = gl.createTexture();
         this.initializeTexture(gl, texture);
         const level = 0;
@@ -367,7 +364,7 @@ export default {
         this.generateMipmap(gl, image);
         return texture;
     },
-    loadTexture: function(gl, url) {
+    loadTexture: function (gl, url) {
         const texture = gl.createTexture();
         this.initializeTexture(gl, texture);
 
@@ -378,7 +375,7 @@ export default {
         const image = new Image();
         let that = this;
 
-        image.onload = function() {
+        image.onload = function () {
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
             that.generateMipmap(gl, image);
@@ -388,17 +385,17 @@ export default {
         return texture;
     },
 
-    getBillboardMatrix: function(position, cameraPos, cameraUp) {
+    getBillboardMatrix: function (position, cameraPos, cameraUp) {
         let to = glm.vec3.subtract(glm.vec3.create(), cameraPos, position);
         let look = glm.vec3.normalize(to, to);
         let right = glm.vec3.cross(glm.vec3.create(), cameraUp, look);
         let up2 = glm.vec3.cross(glm.vec3.create(), look, right);
 
         return glm.mat4.fromValues(
-            right[0],right[1],right[2],0,
-            up2[0],up2[1],up2[2],0,
-            look[0],look[1],look[2],0,
-            position[0],position[1],position[2],1
+            right[0], right[1], right[2], 0,
+            up2[0], up2[1], up2[2], 0,
+            look[0], look[1], look[2], 0,
+            position[0], position[1], position[2], 1
         );
     },
     createFramebuffer: function (gl, width, height, format) {
@@ -420,7 +417,7 @@ export default {
         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, maskRenderBuffer);
 
         let e = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-        if(gl.FRAMEBUFFER_COMPLETE !== e) {
+        if (gl.FRAMEBUFFER_COMPLETE !== e) {
             console.error("ERROR", e.toString());
         }
         // Unbind the buffer object
@@ -440,7 +437,10 @@ export default {
         if (obj.texture) gl.deleteTexture(obj.texture);
         if (obj.render) gl.deleteRenderbuffer(obj.render);
     },
-    getFramebufferTexture: function(gl) {
+    getFramebufferTexture: function (gl) {
         return gl.getFramebufferAttachmentParameter(gl.READ_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
     },
+    toggleVR(gl, state) {
+        state.vrToggle = true;
+    }
 }

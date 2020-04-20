@@ -74,7 +74,7 @@
         },
         methods: {
             enableVr() {
-                webGl.loopVr(this.gl, this.state);
+                webGl.toggleVR(this.gl, this.state);
             },
             enableMic() {
                 function handleSound(stream) {
@@ -217,14 +217,15 @@
 
             // eslint-disable-next-line no-unused-vars
             function clean(gl, framebuffer, color) {
-                gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-                gl.clearColor(color[0], color[1], color[2], color[3]);
-                gl.enable(gl.DEPTH_TEST);
-                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
                 webGl.bindTexture(gl, programInfo.uniformLocations.sampler[0], 0, pixel);
                 webGl.bindTexture(gl, programInfo.uniformLocations.sampler[1], 1, pixel);
                 webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, pixel);
+
+                gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+
+                gl.clearColor(color[0], color[1], color[2], color[3]);
+                gl.enable(gl.DEPTH_TEST);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             }
 
             function createOrCleanFramebuffer(gl, viewport, framebuffer, color){
