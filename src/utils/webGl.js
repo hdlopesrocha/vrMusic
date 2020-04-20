@@ -78,6 +78,10 @@ export default {
                 console.log(space);
                 // state.vrSpace =  space.getOffsetReferenceSpace(new XRRigidTransform(glm.vec3.fromValues(0,-1.60,0), glm.quat.create()) );
                 state.vrSpace = space;
+                if(state.animation) {
+                    cancelAnimationFrame(state.animation);
+                }
+
                 state.animation = session.requestAnimationFrame(render);
             });
             console.log(session);
@@ -98,10 +102,11 @@ export default {
                     }
                 }
             }
+
             let pose = null;
             let session = null;
 
-            if (state.vrInitialized) {
+            if (state.vrInitialized && frame) {
                 session = frame.session;
                 state.animation = session.requestAnimationFrame(render);
                 if (state.vrSpace && frame) {
@@ -114,14 +119,16 @@ export default {
             state.tick(now);
             state.updateCallback(gl, state);
 
-            if (state.vrInitialized) {
+            if (state.vrInitialized && frame) {
                 if (pose) {
                     let layer = session ? session.renderState.baseLayer : null;
                     state.cleanDrawback(gl, layer.framebuffer, that.TRANSPARENT);
                     for (let i in pose.views) {
                         let view = pose.views[i];
                         let viewport = layer.getViewport(view);
-                        state.drawCallback(gl, viewport, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer, i + 1);
+                        if(viewport.width > 0 && viewport.height>0){
+                            state.drawCallback(gl, viewport, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer, i + 1);
+                        }
                     }
                 }
             } else {
@@ -345,11 +352,11 @@ export default {
         const srcType = gl.UNSIGNED_BYTE;
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, data);
 
-        //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      //  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
     },
     loadImage: function (gl, image) {

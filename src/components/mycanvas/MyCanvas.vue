@@ -168,7 +168,8 @@
             this.dataArray = new Uint8Array(this.fftSize);
             webAudio.initializeArray(this.freqArray);
             webAudio.initializeArray(this.dataArray);
-            webGl.initializeTexture(gl, audioTexture);
+            // webGl.initializeTexture(gl, audioTexture); or ...
+            webGl.loadAudio(gl, audioTexture, this.fftSize, this.dataArray);
 
             perlin.noise.seed(Math.random());
 
@@ -217,25 +218,28 @@
 
             // eslint-disable-next-line no-unused-vars
             function clean(gl, framebuffer, color) {
-                webGl.bindTexture(gl, programInfo.uniformLocations.sampler[0], 0, pixel);
-                webGl.bindTexture(gl, programInfo.uniformLocations.sampler[1], 1, pixel);
-                webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, pixel);
-
                 gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-
                 gl.clearColor(color[0], color[1], color[2], color[3]);
                 gl.enable(gl.DEPTH_TEST);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             }
 
             function createOrCleanFramebuffer(gl, viewport, framebuffer, color){
-                if (framebuffer == null || framebuffer.width !== viewport.width || framebuffer.height !== viewport.height) {
+                if (!framebuffer || framebuffer.width !== viewport.width || framebuffer.height !== viewport.height) {
                     if (framebuffer != null) {
                         webGl.deleteFramebuffer(gl, framebuffer);
                     }
                     framebuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
                 }
-                clean(gl, framebuffer.frame, color);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer.frame);
+                gl.clearColor(color[0], color[1], color[2], color[3]);
+                gl.enable(gl.DEPTH_TEST);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                webGl.bindTexture(gl, programInfo.uniformLocations.sampler[0], 0, pixel);
+                webGl.bindTexture(gl, programInfo.uniformLocations.sampler[1], 1, pixel);
+                webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, audioTexture);
+
                 return framebuffer;
             }
 
@@ -246,10 +250,8 @@
                 gl.viewport(0, 0, viewport.width, viewport.height);
                 webGl.enableAttribs(gl, programInfo);
 
-                let map = state.map[index];
-                if (!map) {
-                    map = {};
-                }
+                let map = state.map[index] || {};
+
                 let drawFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.drawFrameBuffer, webGl.TRANSPARENT);
                 let maskFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.maskFrameBuffer, webGl.BLACK);
                 let blurFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.blurFrameBuffer, webGl.TRANSPARENT);
