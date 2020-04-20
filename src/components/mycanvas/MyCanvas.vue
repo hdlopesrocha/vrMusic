@@ -149,26 +149,38 @@
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-            let mandalaModel = null;
-            let statueModel = null;
-            let spaceModel = null;
-            let torusModel = null;
-            let cubeModel = null;
-
+            // *************
+            // load textures
+            // *************
+            let pixel = webGl.loadTexture(gl, "textures/pixel.png");
             let patternTexture = webGl.loadTexture(gl, "textures/pattern.png");
             let cylinderMesh = webGl.getCylinderMesh(gl, patternTexture);
             let flareTexture = webGl.loadTexture(gl, "textures/flare.png");
             let mandalaTexture = webGl.loadTexture(gl, "textures/mandala.png");
             let mandalaMaskTexture = webGl.loadTexture(gl, "textures/mandala_mask.png");
             let billboardMesh = webGl.createBillboard(gl);
-            let audioTexture = gl.createTexture();
 
+            // **********************
+            // initialize audio state
+            // **********************
+            let audioTexture = gl.createTexture();
             this.freqArray = new Uint8Array(this.fftSize);
             this.dataArray = new Uint8Array(this.fftSize);
             webAudio.initializeArray(this.freqArray);
             webAudio.initializeArray(this.dataArray);
+            webGl.initializeTexture(gl, audioTexture);
 
             perlin.noise.seed(Math.random());
+
+
+            // ***********
+            // load models
+            // ***********
+            let mandalaModel = null;
+            let statueModel = null;
+            let spaceModel = null;
+            let torusModel = null;
+            let cubeModel = null;
 
             const loader = new GLTFLoader();
             loader.load("models/ganesha.gltf", gltf => {
@@ -186,15 +198,19 @@
             loader.load("models/cube.gltf", gltf => {
                 cubeModel = webGl.getModel(gl, gltf);
             });
+
+            // ********
+            // fun zone
+            // ********
+
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
                 if(this.audioContext) {
-                    const len = this.dataArray.length;
                     if (this.analyser) {
                         this.analyser.getByteTimeDomainData(this.dataArray);
+                        webGl.loadAudio(gl,audioTexture, this.fftSize, this.dataArray);
+                        webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, audioTexture);
                     }
-                    webGl.loadAudio(gl,audioTexture, len, this.dataArray);
-                    webGl.bindAudioTexture(gl, programInfo, audioTexture);
                     this.timeDisplacement = 0.0;
                 }
             }
@@ -205,13 +221,17 @@
                 gl.clearColor(color[0], color[1], color[2], color[3]);
                 gl.enable(gl.DEPTH_TEST);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                webGl.bindTexture(gl, programInfo.uniformLocations.sampler[0], 0, pixel);
+                webGl.bindTexture(gl, programInfo.uniformLocations.sampler[1], 1, pixel);
+                webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, pixel);
             }
 
             // eslint-disable-next-line no-unused-vars
             function draw(gl, viewport, state, viewMatrix, projectionMatrix, mainFramebuffer, index) {
-                webGl.enableAttribs(gl, programInfo);
                 // viewport for extra framebuffers (not for the main one)
                 gl.viewport(0, 0, viewport.width, viewport.height);
+                webGl.enableAttribs(gl, programInfo);
 
                 let map = state.map[index];
                 if (!map) {
@@ -221,6 +241,7 @@
                 let maskFrameBuffer = map.maskFrameBuffer;
                 let blurFrameBuffer = map.blurFrameBuffer;
                 let mixFrameBuffer = map.mixFrameBuffer;
+                let debug = true;
 
                 if (drawFrameBuffer == null || drawFrameBuffer.width !== viewport.width || drawFrameBuffer.height !== viewport.height) {
                     if (drawFrameBuffer != null) {
@@ -558,6 +579,7 @@
                 // Draw model edges
                 // ****************
                 if(statueModel) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
                     let position = glm.vec3.fromValues(0, 0, 0);
                     glm.vec3.add(position, position, center);
@@ -570,7 +592,6 @@
                     gl.enable(gl.CULL_FACE);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
 
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_EDGES);
                     for (let mesh of statueModel) {
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
@@ -580,7 +601,6 @@
                 // *****
                 // DEBUG
                 // *****
-                let debug = true;
                 if(debug && billboardMesh){
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
@@ -589,7 +609,12 @@
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    let textures = [audioTexture , maskFrameBuffer.texture, blurFrameBuffer.texture, mixFrameBuffer.texture];
+                    let textures = [
+                        audioTexture ,
+                        maskFrameBuffer.texture,
+                        blurFrameBuffer.texture,
+                        mixFrameBuffer.texture
+                    ];
                     let size = 0.1;
 
 

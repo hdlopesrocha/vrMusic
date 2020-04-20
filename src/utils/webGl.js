@@ -278,6 +278,11 @@ export default {
         gl.disableVertexAttribArray(programInfo.attribLocations.vertexNormal);
         gl.disableVertexAttribArray(programInfo.attribLocations.textureCoordinates);
     },
+    bindTexture(gl, uniform, position, texture) {
+        gl.uniform1i(uniform, position);
+        gl.activeTexture(gl.TEXTURE0 + position);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+    },
     drawMesh: function(gl, programInfo, mesh, mode,image0, image1) {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vb);
@@ -302,14 +307,10 @@ export default {
         }
 
         if(image0) {
-            gl.uniform1i(programInfo.uniformLocations.sampler[0], 0);
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, image0);
+            this.bindTexture(gl, programInfo.uniformLocations.sampler[0], 0, image0);
         }
         if(image1) {
-            gl.uniform1i(programInfo.uniformLocations.sampler[1], 1);
-            gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, image1);
+            this.bindTexture(gl, programInfo.uniformLocations.sampler[1], 1, image1);
         }
 
         gl.drawElements(mode, mesh.ic, gl.UNSIGNED_SHORT, 0);
@@ -331,10 +332,10 @@ export default {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
     },
-    bindAudioTexture: function(gl, programInfo, texture){
-        gl.uniform1i(programInfo.uniformLocations.audioSampler, 2);
-        gl.activeTexture(gl.TEXTURE2);
+    initializeTexture(gl , texture) {
         gl.bindTexture(gl.TEXTURE_2D, texture);
+        const pixel = new Uint8Array([0]);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 1, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, pixel);
     },
     loadAudio(gl, texture, width, data) {
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -352,22 +353,15 @@ export default {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
     },
     loadImage: function(gl, image){
         const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        this.initializeTexture(gl, texture);
         const level = 0;
         const internalFormat = gl.RGBA;
-        const width = 1;
-        const height = 1;
-        const border = 0;
         const srcFormat = gl.RGBA;
         const srcType = gl.UNSIGNED_BYTE;
-        const pixel = new Uint8Array([0, 0, 0, 255]);  // opaque blue
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
-
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
         this.generateMipmap(gl, image);
@@ -375,18 +369,12 @@ export default {
     },
     loadTexture: function(gl, url) {
         const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        this.initializeTexture(gl, texture);
 
         const level = 0;
         const internalFormat = gl.RGBA;
-        const width = 1;
-        const height = 1;
-        const border = 0;
         const srcFormat = gl.RGBA;
         const srcType = gl.UNSIGNED_BYTE;
-        const pixel = new Uint8Array([0, 0, 0, 255]);  // opaque blue
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
-
         const image = new Image();
         let that = this;
 
