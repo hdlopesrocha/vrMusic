@@ -64,15 +64,16 @@ void main(void) {
         color = color*vec4(dotFactor, dotFactor, dotFactor, 1.0);
     }
 
-    if (uDrawMode == DRAW_MODE_MASK){
-
+    if (uDrawMode == DRAW_MODE_2D_MIX){
+        color *= 0.5;
+        color.xyz += 0.3;
     }
     else if (uDrawMode == DRAW_MODE_NO_EDGES_MASK || uDrawMode == DRAW_MODE_EDGES) {
         vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
         float edgeDot = abs(dot(vertexToCam, normal));
         float edgeFactor = 0.3;
         if (uDrawMode == DRAW_MODE_EDGES) {
-            color = edgeDot < edgeFactor ? vColor: color*vec4(1.0, 1.0, 1.0, 0.4)+vec4(0.4, 0.4, 0.4, 0.0);
+            color = edgeDot < edgeFactor ? vColor: vec4(0.0);
         }else {
             color = edgeDot < edgeFactor ? vec4(0.0) : vec4(1.0);
         }

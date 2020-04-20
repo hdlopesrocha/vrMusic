@@ -506,18 +506,17 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_MIX);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, blurFrameBuffer.texture);
                 }
 
-                // ***************
-                // Draw model mesh
-                // ***************
+                // **********
+                // Draw model
+                // **********
                 if(statueModel) {
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
                     let position = glm.vec3.fromValues(0, 0, 0);
                     glm.vec3.add(position, position, center);
@@ -530,11 +529,13 @@
                     gl.enable(gl.CULL_FACE);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
 
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_EDGES);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, mixFrameBuffer.frame);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_DEFAULT);
                     for (let mesh of statueModel) {
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
                 }
+
 
                 // ****************
                 // DRAW MIXBUFFER 2
@@ -546,12 +547,36 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_MIX);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, mixFrameBuffer.texture);
                 }
+
+                // ****************
+                // Draw model edges
+                // ****************
+                if(statueModel) {
+
+                    let position = glm.vec3.fromValues(0, 0, 0);
+                    glm.vec3.add(position, position, center);
+                    glm.mat4.identity(modelMatrix);
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.enable(gl.CULL_FACE);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
+
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_EDGES);
+                    for (let mesh of statueModel) {
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
+                    }
+                }
+
                 // *****
                 // DEBUG
                 // *****
