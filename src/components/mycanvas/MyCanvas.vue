@@ -227,6 +227,18 @@
                 webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, pixel);
             }
 
+            function createOrCleanFramebuffer(gl, viewport, framebuffer, color){
+                if (framebuffer == null || framebuffer.width !== viewport.width || framebuffer.height !== viewport.height) {
+                    if (framebuffer != null) {
+                        webGl.deleteFramebuffer(gl, framebuffer);
+                    }
+                    framebuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
+                }
+                clean(gl, framebuffer.frame, color);
+                return framebuffer;
+            }
+
+
             // eslint-disable-next-line no-unused-vars
             function draw(gl, viewport, state, viewMatrix, projectionMatrix, mainFramebuffer, index) {
                 // viewport for extra framebuffers (not for the main one)
@@ -237,28 +249,11 @@
                 if (!map) {
                     map = {};
                 }
-                let drawFrameBuffer = map.drawFrameBuffer;
-                let maskFrameBuffer = map.maskFrameBuffer;
-                let blurFrameBuffer = map.blurFrameBuffer;
-                let mixFrameBuffer = map.mixFrameBuffer;
+                let drawFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.drawFrameBuffer, webGl.TRANSPARENT);
+                let maskFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.maskFrameBuffer, webGl.BLACK);
+                let blurFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.blurFrameBuffer, webGl.TRANSPARENT);
+                let mixFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.mixFrameBuffer, webGl.TRANSPARENT);
                 let debug = true;
-
-                if (drawFrameBuffer == null || drawFrameBuffer.width !== viewport.width || drawFrameBuffer.height !== viewport.height) {
-                    if (drawFrameBuffer != null) {
-                        webGl.deleteFramebuffer(gl, drawFrameBuffer);
-                        webGl.deleteFramebuffer(gl, maskFrameBuffer);
-                        webGl.deleteFramebuffer(gl, blurFrameBuffer);
-                        webGl.deleteFramebuffer(gl, mixFrameBuffer);
-                    }
-                    drawFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
-                    maskFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
-                    blurFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
-                    mixFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
-                }
-                clean(gl, drawFrameBuffer.frame, webGl.TRANSPARENT);
-                clean(gl, maskFrameBuffer.frame, webGl.BLACK);
-                clean(gl, blurFrameBuffer.frame, webGl.TRANSPARENT);
-                clean(gl, mixFrameBuffer.frame, webGl.TRANSPARENT);
 
                 state.map[index] = {
                     drawFrameBuffer: drawFrameBuffer,
