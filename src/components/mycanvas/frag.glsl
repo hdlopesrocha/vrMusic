@@ -4,6 +4,7 @@ precision highp int;
 
 uniform int uDrawMode;
 uniform sampler2D uSampler[2];
+uniform sampler2D uAudioSampler;
 
 uniform bool uEnableLight;
 uniform float uTime;
@@ -60,7 +61,7 @@ void main(void) {
         color = texture(uSampler[0], textureCoordinates);
     } else if(uDrawMode == DRAW_MODE_2D_NORMAL_MAP){
         float textureNoiseVelocity = 1.0;
-        float textureNoiseFrequency = 64.0;
+        float textureNoiseFrequency = 256.0;
         float d = 1.0/uCanvasSize.y;
 
         vec3 p = calcPosition(textureNoiseFrequency*textureCoordinates, uTime*textureNoiseVelocity);
@@ -69,6 +70,16 @@ void main(void) {
         vec3 n = normalize(cross(b-p,a-p));
 
         color =  vec4(n ,1.0);
+        // color = vec4(p.z, p.z,p.z ,1.0);
+    } else if(uDrawMode == DRAW_MODE_2D_WATER){
+        float dist = clamp(length(textureCoordinates-vec2(0.5))*sqrt(2.0), 0.0, 1.0);
+        float factor = ( dist *dist*dist);
+        vec4 shift = texture(uSampler[1], textureCoordinates)-0.5;
+
+        color = texture(uSampler[0], textureCoordinates+shift.xy*factor);
+        color.xyz += length(shift)*factor;
+
+        // color = vec4(p.z, p.z,p.z ,1.0);
     } else {
         color = texture(uSampler[0], textureCoordinates)*vColor;
     }

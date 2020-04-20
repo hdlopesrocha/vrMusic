@@ -38,7 +38,7 @@
     const DRAW_MODE_MANDALA = 7
     const DRAW_MODE_CUBE = 8
     const DRAW_MODE_2D_NORMAL_MAP = 9
-
+    const DRAW_MODE_2D_WATER = 10
     /* eslint-enable no-unused-vars */
 
 
@@ -256,6 +256,7 @@
                 let maskFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.maskFrameBuffer, webGl.BLACK);
                 let blurFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.blurFrameBuffer, webGl.TRANSPARENT);
                 let mixFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.mixFrameBuffer, webGl.TRANSPARENT);
+                let waterFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.waterFrameBuffer, webGl.TRANSPARENT);
                 let normalFrameBuffer = createOrCleanFramebuffer(gl, 128,128, map.normalFrameBuffer, webGl.TRANSPARENT);
                 let debug = true;
 
@@ -264,6 +265,7 @@
                     maskFrameBuffer: maskFrameBuffer,
                     blurFrameBuffer: blurFrameBuffer,
                     mixFrameBuffer: mixFrameBuffer,
+                    waterFrameBuffer: waterFrameBuffer,
                     normalFrameBuffer: normalFrameBuffer,
                 };
 
@@ -271,6 +273,9 @@
                 gl.uniform1f(programInfo.uniformLocations.time, state.time+this.timeDisplacement);
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
                 gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
+
+                let waterAmount = webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, 1.0);
+
 
                 let variant = 0;
 
@@ -597,23 +602,32 @@
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
                 }
-                // ***************
-                // DRAW NORMAL MAP
-                // ***************
+
+                // **********
+                // DRAW WATER
+                // **********
                 {
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, normalFrameBuffer.frame);
-
-                    glm.mat4.identity(modelMatrix);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_NORMAL_MAP);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
+                    glm.mat4.identity(modelMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
+                    // NORMAL MAP
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, normalFrameBuffer.frame);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_NORMAL_MAP);
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, pixel);
-                }
 
+                    // MIX NORMAL WITH DRAW
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, waterFrameBuffer.frame);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_WATER);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture, normalFrameBuffer.texture);
+
+                    // SEND WATER TO DRAW
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, waterFrameBuffer.texture);
+                }
 
                 // *****
                 // DEBUG
@@ -631,7 +645,8 @@
                         maskFrameBuffer.texture,
                         blurFrameBuffer.texture,
                         mixFrameBuffer.texture,
-                        normalFrameBuffer.texture
+                        normalFrameBuffer.texture,
+                        waterFrameBuffer.texture
                     ];
                     let size = 0.1;
 
