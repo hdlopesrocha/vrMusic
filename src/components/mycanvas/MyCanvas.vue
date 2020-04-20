@@ -37,6 +37,7 @@
     const DRAW_MODE_TORUS = 6
     const DRAW_MODE_MANDALA = 7
     const DRAW_MODE_CUBE = 8
+    const DRAW_MODE_2D_NORMAL_MAP = 9
 
     /* eslint-enable no-unused-vars */
 
@@ -168,8 +169,7 @@
             this.dataArray = new Uint8Array(this.fftSize);
             webAudio.initializeArray(this.freqArray);
             webAudio.initializeArray(this.dataArray);
-            // webGl.initializeTexture(gl, audioTexture); or ...
-            webGl.loadAudio(gl, audioTexture, this.fftSize, this.dataArray);
+            webGl.initializeTexture(gl, audioTexture);
 
             perlin.noise.seed(Math.random());
 
@@ -224,12 +224,12 @@
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             }
 
-            function createOrCleanFramebuffer(gl, viewport, framebuffer, color){
-                if (!framebuffer || framebuffer.width !== viewport.width || framebuffer.height !== viewport.height) {
+            function createOrCleanFramebuffer(gl, width, height, framebuffer, color){
+                if (!framebuffer || framebuffer.width !== width || framebuffer.height !== height) {
                     if (framebuffer != null) {
                         webGl.deleteFramebuffer(gl, framebuffer);
                     }
-                    framebuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
+                    framebuffer = webGl.createFramebuffer(gl, width, height, gl.RGBA);
                 }
                 gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer.frame);
                 gl.clearColor(color[0], color[1], color[2], color[3]);
@@ -252,17 +252,19 @@
 
                 let map = state.map[index] || {};
 
-                let drawFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.drawFrameBuffer, webGl.TRANSPARENT);
-                let maskFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.maskFrameBuffer, webGl.BLACK);
-                let blurFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.blurFrameBuffer, webGl.TRANSPARENT);
-                let mixFrameBuffer = createOrCleanFramebuffer(gl, viewport, map.mixFrameBuffer, webGl.TRANSPARENT);
+                let drawFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.drawFrameBuffer, webGl.TRANSPARENT);
+                let maskFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.maskFrameBuffer, webGl.BLACK);
+                let blurFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.blurFrameBuffer, webGl.TRANSPARENT);
+                let mixFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.mixFrameBuffer, webGl.TRANSPARENT);
+                let normalFrameBuffer = createOrCleanFramebuffer(gl, 128,128, map.normalFrameBuffer, webGl.TRANSPARENT);
                 let debug = true;
 
                 state.map[index] = {
                     drawFrameBuffer: drawFrameBuffer,
                     maskFrameBuffer: maskFrameBuffer,
                     blurFrameBuffer: blurFrameBuffer,
-                    mixFrameBuffer: mixFrameBuffer
+                    mixFrameBuffer: mixFrameBuffer,
+                    normalFrameBuffer: normalFrameBuffer,
                 };
 
 
@@ -595,6 +597,23 @@
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
                 }
+                // ***************
+                // DRAW NORMAL MAP
+                // ***************
+                {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, normalFrameBuffer.frame);
+
+                    glm.mat4.identity(modelMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_NORMAL_MAP);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, pixel);
+                }
+
 
                 // *****
                 // DEBUG
@@ -611,13 +630,10 @@
                         audioTexture ,
                         maskFrameBuffer.texture,
                         blurFrameBuffer.texture,
-                        mixFrameBuffer.texture
+                        mixFrameBuffer.texture,
+                        normalFrameBuffer.texture
                     ];
                     let size = 0.1;
-
-
-
-
 
                     for(let i in textures) {
                         let texture = textures[i];
@@ -627,6 +643,7 @@
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                         webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, texture);
                     }
+
                 }
                 // ****************
                 // DRAW FRAMEBUFFER

@@ -32,7 +32,7 @@ void main(void) {
     vColor = vec4(1.0,1.0,1.0,1.0);
     vPosition = uModelMatrix*aVertexPosition;
 
-    if(uDrawMode == DRAW_MODE_2D || uDrawMode == DRAW_MODE_2D_MIX || uDrawMode == DRAW_MODE_2D_BLUR) {
+    if(uDrawMode == DRAW_MODE_2D || uDrawMode == DRAW_MODE_2D_MIX || uDrawMode == DRAW_MODE_2D_BLUR || uDrawMode == DRAW_MODE_2D_NORMAL_MAP) {
         gl_Position = uOrthoMatrix * vPosition;
         vTextureCoordinates.x = tTextureCoordinates.x;
         vTextureCoordinates.y = 1.0 - tTextureCoordinates.y;

@@ -26,6 +26,10 @@ vec4 alphaBlend(vec4 color){
     return vec4(color.x * color.w, color.y * color.w, color.z * color.w, color.w);
 }
 
+vec3 calcPosition(vec2 pos, float t) {
+    float height = noise(vec3(pos, t));
+    return vec3(pos, height);
+}
 
 void main(void) {
     vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
@@ -54,6 +58,17 @@ void main(void) {
         color = vColor;
     } else if (uDrawMode == DRAW_MODE_EDGES) {
         color = texture(uSampler[0], textureCoordinates);
+    } else if(uDrawMode == DRAW_MODE_2D_NORMAL_MAP){
+        float textureNoiseVelocity = 1.0;
+        float textureNoiseFrequency = 64.0;
+        float d = 1.0/uCanvasSize.y;
+
+        vec3 p = calcPosition(textureNoiseFrequency*textureCoordinates, uTime*textureNoiseVelocity);
+        vec3 a = calcPosition(textureNoiseFrequency*textureCoordinates+ vec2(0.0, d), uTime*textureNoiseVelocity);
+        vec3 b = calcPosition(textureNoiseFrequency*textureCoordinates+ vec2(d, 0.0), uTime*textureNoiseVelocity);
+        vec3 n = normalize(cross(b-p,a-p));
+
+        color =  vec4(n ,1.0);
     } else {
         color = texture(uSampler[0], textureCoordinates)*vColor;
     }
