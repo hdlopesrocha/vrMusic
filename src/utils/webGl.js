@@ -3,6 +3,9 @@ import WebXRPolyfill from "webxr-polyfill";
 import * as glm from "gl-matrix";
 
 export default {
+    TRANSPARENT: glm.vec4.fromValues(0.0, 0.0, 0.0, 0.0),
+    WHITE: glm.vec4.fromValues(1.0, 1.0, 1.0, 1.0),
+    BLACK: glm.vec4.fromValues(0.0, 0.0, 0.0, 1.0),
 
     initShaderProgram: function(gl, vsSource, fsSource) {
         const vertexShader = this.loadShader(gl, gl.VERTEX_SHADER, vsSource);
@@ -56,6 +59,7 @@ export default {
         };
     },
     loopVr: function(gl, state) {
+        let that = this;
         function render(now, frame) {
             let session = frame.session;
             if(state.vrInitialized) {
@@ -72,7 +76,7 @@ export default {
 
             if (pose) {
                 let layer = session ? session.renderState.baseLayer : null;
-                state.cleanDrawback(gl, layer.framebuffer);
+                state.cleanDrawback(gl, layer.framebuffer, that.TRANSPARENT);
 
                 for (let i in pose.views) {
                     let view = pose.views[i];
@@ -116,7 +120,7 @@ export default {
         }
     },
     loop: function(gl, state) {
-
+        let that = this;
         function render(now) {
             if(!state.vrInitialized) {
                 state.animation = requestAnimationFrame(render);
@@ -124,7 +128,7 @@ export default {
 
             state.tick(now);
             state.updateCallback(gl, state);
-            state.cleanDrawback(gl, null)
+            state.cleanDrawback(gl, null, that.TRANSPARENT)
             let viewport = {
                 width: gl.canvas.width,
                 height: gl.canvas.height,
@@ -250,9 +254,9 @@ export default {
         let normals =  geometry.attributes.normal.array;
         let texture_coordinates =  geometry.attributes.uv.array;
         let indices = geometry.index.array;
-        let image = mesh.material.map.image;
+        let image = mesh.material.map ? mesh.material.map.image : null;
 
-        return this.createArrayBuffers(gl, vertices, normals, texture_coordinates, indices, this.loadImage(gl, image) );
+        return this.createArrayBuffers(gl, vertices, normals, texture_coordinates, indices, image ? this.loadImage(gl, image) : null);
     },
     getModel(gl, gltf){
         let group = [];
@@ -409,11 +413,11 @@ export default {
             position[0],position[1],position[2],1
         );
     },
-    createFramebuffer: function (gl, width, height) {
+    createFramebuffer: function (gl, width, height, format) {
         // texture
         let maskTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, maskTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, format, gl.UNSIGNED_BYTE, null);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
         // render

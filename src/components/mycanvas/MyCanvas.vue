@@ -24,17 +24,20 @@
 
 <script>
     /* eslint-disable no-unused-vars */
+    const DRAW_MODE_2D_BLUR = -4
     const DRAW_MODE_2D_MIX = -3
     const DRAW_MODE_2D = -2
     const DRAW_MODE_MASK = -1
     const DRAW_MODE_DEFAULT = 0
+    const DRAW_MODE_SKY = 1
     const DRAW_MODE_CYLINDER = 2
     const DRAW_MODE_EDGES = 3
-    const DRAW_MODE_SKY = 4
+    const DRAW_MODE_NO_EDGES_MASK = 4
     const DRAW_MODE_BILLBOARD = 5
     const DRAW_MODE_TORUS = 6
     const DRAW_MODE_MANDALA = 7
     const DRAW_MODE_CUBE = 8
+
     /* eslint-enable no-unused-vars */
 
 
@@ -152,9 +155,11 @@
             let torusModel = null;
             let cubeModel = null;
 
-            let patternTexture = webGl.loadTexture(gl, "models/pattern.png");
+            let patternTexture = webGl.loadTexture(gl, "textures/pattern.png");
             let cylinderMesh = webGl.getCylinderMesh(gl, patternTexture);
-            let flareTexture = webGl.loadTexture(gl, "models/flare.png");
+            let flareTexture = webGl.loadTexture(gl, "textures/flare.png");
+            let mandalaTexture = webGl.loadTexture(gl, "textures/mandala.png");
+            let mandalaMaskTexture = webGl.loadTexture(gl, "textures/mandala_mask.png");
             let billboardMesh = webGl.createBillboard(gl);
             let audioTexture = gl.createTexture();
 
@@ -195,9 +200,9 @@
             }
 
             // eslint-disable-next-line no-unused-vars
-            function clean(gl, framebuffer) {
+            function clean(gl, framebuffer, color) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-                gl.clearColor(0.0, 0.0, 0.0, 0.0);
+                gl.clearColor(color[0], color[1], color[2], color[3]);
                 gl.enable(gl.DEPTH_TEST);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             }
@@ -214,29 +219,33 @@
                 }
                 let drawFrameBuffer = map.drawFrameBuffer;
                 let maskFrameBuffer = map.maskFrameBuffer;
+                let blurFrameBuffer = map.blurFrameBuffer;
                 let mixFrameBuffer = map.mixFrameBuffer;
 
                 if (drawFrameBuffer == null || drawFrameBuffer.width !== viewport.width || drawFrameBuffer.height !== viewport.height) {
                     if (drawFrameBuffer != null) {
                         webGl.deleteFramebuffer(gl, drawFrameBuffer);
                         webGl.deleteFramebuffer(gl, maskFrameBuffer);
+                        webGl.deleteFramebuffer(gl, blurFrameBuffer);
                         webGl.deleteFramebuffer(gl, mixFrameBuffer);
                     }
-                    drawFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height);
-                    maskFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height);
-                    mixFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height);
+                    drawFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
+                    maskFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
+                    blurFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
+                    mixFrameBuffer = webGl.createFramebuffer(gl, viewport.width, viewport.height, gl.RGBA);
                 }
-                clean(gl, drawFrameBuffer.frame);
-                clean(gl, maskFrameBuffer.frame);
-                clean(gl, mixFrameBuffer.frame);
+                clean(gl, drawFrameBuffer.frame, webGl.TRANSPARENT);
+                clean(gl, maskFrameBuffer.frame, webGl.BLACK);
+                clean(gl, blurFrameBuffer.frame, webGl.TRANSPARENT);
+                clean(gl, mixFrameBuffer.frame, webGl.TRANSPARENT);
 
                 state.map[index] = {
                     drawFrameBuffer: drawFrameBuffer,
                     maskFrameBuffer: maskFrameBuffer,
+                    blurFrameBuffer: blurFrameBuffer,
                     mixFrameBuffer: mixFrameBuffer
                 };
 
-                gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
                 gl.uniform1f(programInfo.uniformLocations.time, state.time+this.timeDisplacement);
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
@@ -269,6 +278,8 @@
                 // Draw space
                 // **********
                 if(spaceModel) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
                     glm.mat4.identity(modelMatrix);
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(400, 400, 400));
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -285,6 +296,8 @@
                 // Draw torus
                 // **********
                 if(torusModel) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
                     let position = glm.vec3.fromValues(0, 0, 0);
                     glm.vec3.add(position, position, center);
                     glm.mat4.identity(modelMatrix);
@@ -306,6 +319,8 @@
                 // Draw cubes
                 // **********
                 if(cubeModel) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_CUBE);
                     gl.disable(gl.DEPTH_TEST);
@@ -347,6 +362,8 @@
                 // Draw cylinder
                 // *************
                 {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -371,6 +388,8 @@
                 // Draw billboard
                 // **************
                 {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
                     //let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
                     let up = glm.vec3.fromValues(0, 1, 0);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -396,6 +415,8 @@
                 // Draw mandala
                 // ************
                 if(mandalaModel) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
                     let position = glm.vec3.fromValues(0, -2.2, 0);
                     glm.vec3.add(position, position, center);
                     glm.mat4.identity(modelMatrix);
@@ -408,7 +429,29 @@
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
                     for (let mesh of mandalaModel) {
-                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES, mandalaTexture);
+                    }
+                }
+
+                // *****************
+                // Draw mandala mask
+                // *****************
+                if(mandalaModel) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, maskFrameBuffer.frame);
+
+                    let position = glm.vec3.fromValues(0, -2.2, 0);
+                    glm.vec3.add(position, position, center);
+                    glm.mat4.identity(modelMatrix);
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
+                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_MASK);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    for (let mesh of mandalaModel) {
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES, mandalaMaskTexture);
                     }
                 }
 
@@ -426,21 +469,38 @@
 
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_MASK);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_NO_EDGES_MASK);
 
                     for (let mesh of statueModel) {
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
                 }
 
+                // *********
+                // DRAW BLUR
+                // *********
+                {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, blurFrameBuffer.frame);
+
+                    glm.mat4.identity(modelMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_BLUR);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture, maskFrameBuffer.texture);
+                }
+
                 // ****************
                 // DRAW MIXBUFFER 1
                 // ****************
                 {
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, mixFrameBuffer.frame);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
 
                     glm.mat4.identity(modelMatrix);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -450,7 +510,7 @@
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture, maskFrameBuffer.texture);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, blurFrameBuffer.texture);
                 }
 
                 // ***************
@@ -495,22 +555,30 @@
                 // *****
                 // DEBUG
                 // *****
-                let debug = false;
+                let debug = true;
                 if(debug && billboardMesh){
-                    let up = glm.vec3.fromValues(0, 1, 0);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_DEFAULT);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
-                    {
-                        let modelMatrix2 = webGl.getBillboardMatrix(glm.vec3.fromValues(2,0,-5), cameraPosition, up);
-                        glm.mat4.scale(modelMatrix2, modelMatrix2, glm.vec3.fromValues(2, 2, 2));
 
-                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix2);
-                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
-                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, audioTexture);
+                    let textures = [audioTexture , maskFrameBuffer.texture, blurFrameBuffer.texture, mixFrameBuffer.texture];
+                    let size = 0.1;
+
+
+
+
+
+                    for(let i in textures) {
+                        let texture = textures[i];
+                        glm.mat4.identity(modelMatrix);
+                        glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-1.0+(i*2+1)*size ,1.0-size,0.0));
+                        glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(size,size,1.0));
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, texture);
                     }
-
                 }
                 // ****************
                 // DRAW FRAMEBUFFER

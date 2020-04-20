@@ -26,9 +26,9 @@ void main(void) {
     vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
     vec2 textureCoordinates = vTextureCoordinates;
 
-    if (uDrawMode == DRAW_MODE_2D_MIX) {
+    if (uDrawMode == DRAW_MODE_2D_BLUR) {
         vec4 maskColor = texture(uSampler[1], textureCoordinates);
-        if (maskColor.w > 0.0) {
+        if (maskColor.x > 0.0) {
             vec4 sum = vec4(0.0);
             vec2 delta = 1.0/uCanvasSize;
             int count = 0;
@@ -39,8 +39,7 @@ void main(void) {
                     ++count;
                 }
             }
-            color = (sum / float(count)) + maskColor * 0.5+0.1;
-            color.w = 1.0;
+            color = (sum / float(count));
         } else {
             color.w = 0.0;
         }
@@ -48,6 +47,8 @@ void main(void) {
         return;
     } else if (uDrawMode == DRAW_MODE_TORUS) {
         color = vColor;
+    } else if (uDrawMode == DRAW_MODE_EDGES) {
+        color = texture(uSampler[0], textureCoordinates);
     } else {
         color = texture(uSampler[0], textureCoordinates)*vColor;
     }
@@ -55,23 +56,26 @@ void main(void) {
     vec3 normal = normalize(vNormal);
     if (uEnableLight) {
         float dotFactor = dot(normal, -uLightDirection);
-        fragColor = color*vec4(dotFactor, dotFactor, dotFactor, 1.0);
-    } else {
-        fragColor = color;
+        color = color*vec4(dotFactor, dotFactor, dotFactor, 1.0);
     }
 
-    if (uDrawMode == DRAW_MODE_MASK || uDrawMode == DRAW_MODE_EDGES) {
+    if (uDrawMode == DRAW_MODE_MASK){
+
+    }
+    else if (uDrawMode == DRAW_MODE_NO_EDGES_MASK || uDrawMode == DRAW_MODE_EDGES) {
         vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
         float edgeDot = abs(dot(vertexToCam, normal));
         float edgeFactor = 0.3;
         if (uDrawMode == DRAW_MODE_EDGES) {
-            fragColor = edgeDot < edgeFactor ? vColor: vec4(0.0);
+            color = edgeDot < edgeFactor ? vColor: color*vec4(0.4, 0.4, 0.4, 0.8);
         }else {
-            fragColor = edgeDot < edgeFactor ? vec4(0.0) : fragColor;
+            color = edgeDot < edgeFactor ? vec4(0.0) : vec4(1.0);
         }
     }
 
     if (uDrawMode == DRAW_MODE_SKY || uDrawMode == DRAW_MODE_BILLBOARD || uDrawMode == DRAW_MODE_MANDALA) {
-        fragColor.xyz *= vColor.xyz;
+        color.xyz *= vColor.xyz;
     }
+
+    fragColor = color;
 }
