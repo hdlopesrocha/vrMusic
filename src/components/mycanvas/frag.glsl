@@ -22,6 +22,11 @@ out vec4 fragColor;
 //#PERLIN
 //#HSL2RGB
 
+vec4 alphaBlend(vec4 color){
+    return vec4(color.x * color.w, color.y * color.w, color.z * color.w, color.w);
+}
+
+
 void main(void) {
     vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
     vec2 textureCoordinates = vTextureCoordinates;
@@ -43,7 +48,7 @@ void main(void) {
         } else {
             color.w = 0.0;
         }
-        fragColor = color;
+        fragColor = alphaBlend(color);
         return;
     } else if (uDrawMode == DRAW_MODE_TORUS) {
         color = vColor;
@@ -67,7 +72,7 @@ void main(void) {
         float edgeDot = abs(dot(vertexToCam, normal));
         float edgeFactor = 0.3;
         if (uDrawMode == DRAW_MODE_EDGES) {
-            color = edgeDot < edgeFactor ? vColor: color*vec4(0.4, 0.4, 0.4, 0.8);
+            color = edgeDot < edgeFactor ? vColor: color*vec4(1.0, 1.0, 1.0, 0.4)+vec4(0.4, 0.4, 0.4, 0.0);
         }else {
             color = edgeDot < edgeFactor ? vec4(0.0) : vec4(1.0);
         }
@@ -77,5 +82,6 @@ void main(void) {
         color.xyz *= vColor.xyz;
     }
 
-    fragColor = color;
+    fragColor = alphaBlend(color);
+
 }
