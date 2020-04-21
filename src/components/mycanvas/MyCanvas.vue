@@ -40,6 +40,8 @@
     const DRAW_MODE_2D_NORMAL_MAP = 9
     const DRAW_MODE_2D_WATER = 10
     const DRAW_MODE_2D_SHIFT = 11
+    const DRAW_MODE_2D_RADIAL = 12
+    const DRAW_MODE_2D_LENS = 13
     /* eslint-enable no-unused-vars */
 
 
@@ -254,12 +256,13 @@
                 let map = state.map[index] || {};
 
                 let drawFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.drawFrameBuffer, webGl.TRANSPARENT);
-                let maskFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.maskFrameBuffer, webGl.BLACK);
-                let blurFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.blurFrameBuffer, webGl.TRANSPARENT);
+                let maskFrameBuffer = createOrCleanFramebuffer(gl, viewport.width/2, viewport.height/2, map.maskFrameBuffer, webGl.BLACK);
+                let blurFrameBuffer = createOrCleanFramebuffer(gl, viewport.width/2, viewport.height/2, map.blurFrameBuffer, webGl.TRANSPARENT);
                 let mixFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.mixFrameBuffer, webGl.TRANSPARENT);
                 let waterFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.waterFrameBuffer, webGl.TRANSPARENT);
                 let normalFrameBuffer = createOrCleanFramebuffer(gl, 128,128, map.normalFrameBuffer, webGl.TRANSPARENT);
                 let rgbShiftFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.waterFrameBuffer, webGl.TRANSPARENT);
+                let radialFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.waterFrameBuffer, webGl.TRANSPARENT);
                 let debug = false;
 
                 state.map[index] = {
@@ -270,6 +273,7 @@
                     waterFrameBuffer: waterFrameBuffer,
                     normalFrameBuffer: normalFrameBuffer,
                     rgbShiftFrameBuffer: rgbShiftFrameBuffer,
+                    radialFrameBuffer: radialFrameBuffer,
                 };
 
 
@@ -289,8 +293,10 @@
                 }
 
                 let transitionTime = 8.0;
+                let transitionTime2 = 16.0;
 
-                let waterAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, transitionTime)-0.1 );
+                let blurAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, transitionTime)+0.1 );
+
                 let cylinderAmount = myClamp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time, 0.0, transitionTime));
                 let cubesAmount = myClamp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time, transitionTime));
 
@@ -299,15 +305,17 @@
                 let starsAmount = myClamp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time,  state.time , transitionTime));
 
                 let modelAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time , transitionTime));
-                let rgbShiftAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time+1024, state.time,  state.time , transitionTime)-0.1 );
 
+                let rgbShiftAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time+1024, state.time,  state.time , transitionTime2)-0.1 );
+                let waterAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, transitionTime2)-0.1 );
+                let radialAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , transitionTime2)-0.1 );
                 let variant = 0;
 
                 if (viewMatrix == null) {
                     viewMatrix = glm.mat4.create();
-                    let center = glm.vec3.fromValues(0, -2, -5);
+                    let center = glm.vec3.fromValues(0, 0, -1);
                     let up = glm.vec3.fromValues(0, 1, 0);
-                    let eye = glm.vec3.fromValues(-5, 3, -10);
+                    let eye = glm.vec3.fromValues(0, 0, 0);
                     glm.mat4.lookAt(viewMatrix, eye, center, up);
                 }
                 if (projectionMatrix == null) {
@@ -492,6 +500,7 @@
                 // *****************
                 // Draw mandala mask
                 // *****************
+
                 if(mandalaModel) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, maskFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
@@ -507,9 +516,15 @@
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
+
+                    gl.viewport(0, 0, viewport.width/2, viewport.height/2);
+                    gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width/2, viewport.height/2);
+
                     for (let mesh of mandalaModel) {
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES, mandalaMaskTexture);
                     }
+                    gl.viewport(0, 0, viewport.width, viewport.height);
+                    gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
                 }
 
                 // ***************
@@ -532,17 +547,21 @@
 
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_NO_EDGES_MASK);
 
+                    gl.viewport(0, 0, viewport.width/2, viewport.height/2);
+                    gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width/2, viewport.height/2);
                     for (let mesh of statueModel) {
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
+                    gl.viewport(0, 0, viewport.width, viewport.height);
+                    gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
                 }
 
                 // *********
                 // DRAW BLUR
                 // *********
-                {
+                if(blurAmount){
                     gl.bindFramebuffer(gl.FRAMEBUFFER, blurFrameBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, blurAmount);
 
                     glm.mat4.identity(modelMatrix);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -552,7 +571,15 @@
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
+                    gl.viewport(0, 0, viewport.width/2, viewport.height/2);
+                    gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width/2, viewport.height/2);
+
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture, maskFrameBuffer.texture);
+
+                    gl.viewport(0, 0, viewport.width, viewport.height);
+                    gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+
                 }
 
                 // ****************
@@ -640,6 +667,32 @@
                     }
                 }
 
+                // ***********
+                // DRAW RADIAL
+                // ***********
+                if(radialAmount){
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
+
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    glm.mat4.identity(modelMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+
+                    // SHIFT
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, radialAmount);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, radialFrameBuffer.frame);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_RADIAL);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture);
+
+                    // SEND SHIFT TO DRAW
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, radialFrameBuffer.texture);
+                }
+
                 // **********
                 // DRAW WATER
                 // **********
@@ -658,13 +711,13 @@
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, pixel);
 
                     // MIX NORMAL WITH DRAW
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, waterAmount);
                     gl.bindFramebuffer(gl.FRAMEBUFFER, waterFrameBuffer.frame);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_WATER);
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture, normalFrameBuffer.texture);
 
                     // SEND WATER TO DRAW
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, waterAmount);
-
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, waterFrameBuffer.texture);
@@ -713,9 +766,10 @@
                         maskFrameBuffer.texture,
                         blurFrameBuffer.texture,
                         mixFrameBuffer.texture,
+                        radialFrameBuffer.texture,
+                        rgbShiftFrameBuffer.texture,
                         normalFrameBuffer.texture,
                         waterFrameBuffer.texture,
-                        rgbShiftFrameBuffer.texture
                     ];
                     let size = 0.1;
 
