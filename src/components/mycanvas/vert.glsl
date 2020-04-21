@@ -33,14 +33,7 @@ void main(void) {
     vColor = vec4(1.0,1.0,1.0,1.0);
     vPosition = uModelMatrix*aVertexPosition;
 
-    if(uDrawMode == DRAW_MODE_2D
-    || uDrawMode == DRAW_MODE_2D_MIX
-    || uDrawMode == DRAW_MODE_2D_BLUR
-    || uDrawMode == DRAW_MODE_2D_NORMAL_MAP
-    || uDrawMode == DRAW_MODE_2D_SHIFT
-    || uDrawMode == DRAW_MODE_2D_RADIAL
-    || uDrawMode == DRAW_MODE_2D_LENS
-    || uDrawMode == DRAW_MODE_2D_WATER) {
+    if(uDrawMode <= DRAW_MODE_2D) {
         gl_Position = uOrthoMatrix * vPosition;
         vTextureCoordinates.x = tTextureCoordinates.x;
         vTextureCoordinates.y = 1.0 - tTextureCoordinates.y;
@@ -50,7 +43,7 @@ void main(void) {
         mat4 viewProjectionMatrix = uProjectionMatrix * uViewMatrix;
         float saturation = 4.0;
 
-        if (uDrawMode == DRAW_MODE_CYLINDER) {
+        if (uDrawMode == DRAW_MODE_3D_CYLINDER) {
             float cx = aTextureCoordinates.x;
             float cy = cos(aTextureCoordinates.y*2.0*PI);
             vec4 audio = texture(uAudioSampler, vec2(0.0, 0.0));
@@ -94,7 +87,7 @@ void main(void) {
                 0.0
             );
             vPosition += displacement;
-        } else if (uDrawMode == DRAW_MODE_EDGES) {
+        } else if (uDrawMode == DRAW_MODE_3D_EDGES) {
             float cx = aTextureCoordinates.x;
             float cy = cos(aTextureCoordinates.y*PI);
             vec4 audio = texture(uAudioSampler, vec2(cy, 0.0));
@@ -111,7 +104,7 @@ void main(void) {
                 1.0
             );
             vColor.w = 1.0;
-        } else if (uDrawMode == DRAW_MODE_SKY) {
+        } else if (uDrawMode == DRAW_MODE_3D_SKY) {
             float cx = 0.0;
             float cy = cos(aTextureCoordinates.y*PI*2.0);
             vec4 audio = texture(uAudioSampler, vec2(0.0, 0.0));
@@ -127,7 +120,7 @@ void main(void) {
                 1.0
             );
             vColor.w = 1.0;
-        } else if (uDrawMode == DRAW_MODE_BILLBOARD) {
+        } else if (uDrawMode == DRAW_MODE_3D_BILLBOARD) {
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
             vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
 
@@ -155,7 +148,7 @@ void main(void) {
             );
             vPosition += displacement;
 
-        } else if (uDrawMode == DRAW_MODE_MANDALA) {
+        } else if (uDrawMode == DRAW_MODE_3D_MANDALA) {
             vec4 audio = texture(uAudioSampler, vec2(0.0, 0.0));
             float cx = aTextureCoordinates.x;
             float cy = aTextureCoordinates.y;
@@ -170,7 +163,7 @@ void main(void) {
                 1.0
             );
             vColor.w = 1.0;
-        } else if (uDrawMode == DRAW_MODE_TORUS) {
+        } else if (uDrawMode == DRAW_MODE_3D_TORUS) {
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
             vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
             float cx = 0.0;
@@ -198,7 +191,7 @@ void main(void) {
                 0.0
             );
             vPosition += displacement;
-        } else if (uDrawMode == DRAW_MODE_CUBE) {
+        } else if (uDrawMode == DRAW_MODE_3D_CUBE) {
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
             vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
             float cx = 0.0;
