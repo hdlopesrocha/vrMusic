@@ -307,7 +307,7 @@
                     viewMatrix = glm.mat4.create();
                     let center = glm.vec3.fromValues(0, -2, -5);
                     let up = glm.vec3.fromValues(0, 1, 0);
-                    let eye = glm.vec3.fromValues(-5 * Math.sin(state.time), 3, -5 * Math.cos(state.time) - 5);
+                    let eye = glm.vec3.fromValues(-5, 3, -10);
                     glm.mat4.lookAt(viewMatrix, eye, center, up);
                 }
                 if (projectionMatrix == null) {
