@@ -5,6 +5,7 @@ precision highp int;
 uniform int uDrawMode;
 uniform sampler2D uSampler[2];
 uniform sampler2D uAudioSampler;
+uniform float uEffectAmount;
 
 uniform bool uEnableLight;
 uniform float uTime;
@@ -108,7 +109,7 @@ void main(void) {
     if (uDrawMode == DRAW_MODE_SKY || uDrawMode == DRAW_MODE_BILLBOARD || uDrawMode == DRAW_MODE_MANDALA) {
         color.xyz *= vColor.xyz;
     }
-
+    color.w *= uEffectAmount;
     fragColor = alphaBlend(color);
 
 }

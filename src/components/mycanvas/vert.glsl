@@ -8,6 +8,7 @@ in vec2 aTextureCoordinates;
 
 uniform int uDrawMode;
 uniform float uDrawVariant;
+uniform float uEffectAmount;
 uniform sampler2D uAudioSampler;
 
 uniform mat4 uViewMatrix;
@@ -109,34 +110,48 @@ void main(void) {
             vColor.w = 1.0;
         } else if (uDrawMode == DRAW_MODE_SKY) {
             float cx = 0.0;
-            float cy = cos(aTextureCoordinates.y*PI);
-            vec4 audio = texture(uAudioSampler, vec2(cy, 0.0));
+            float cy = cos(aTextureCoordinates.y*PI*2.0);
+            vec4 audio = texture(uAudioSampler, vec2(0.0, 0.0));
 
-            float time = uTime+audio.x;
+            float time = uTime+audio.x*2.0;
 
             // COLOR
-            float colorVelocity = 0.5;// color changes quicker
-            float colorFrequency = 1.0;// color is wider
+            float colorVelocity = 0.2;// color changes quicker
+            float colorFrequency = 0.5;// color is wider
             vColor.xyz = hsv2rgb(
-                noise(1.0*vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
-                noise(1.0*vec4(uDrawVariant, cx*colorFrequency, cy, colorVelocity*time))*saturation,
+                cos(noise(1.0*vec4(cy*colorFrequency, time*colorVelocity, 0.0, 0.0))*PI*0.5),
+                noise(1.0*vec4(0.0, cy*colorFrequency, time*colorVelocity,0.0))*saturation,
                 1.0
             );
             vColor.w = 1.0;
         } else if (uDrawMode == DRAW_MODE_BILLBOARD) {
-            float cx = aTextureCoordinates.x;
-            float cy = aTextureCoordinates.y;
+            float angle = abs(atan(vPosition.z, vPosition.x))/PI;
+            vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
+
             float time = uTime;
 
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
-            float colorFrequency = 0.1;// color is wider
+            float colorFrequency = 1.0;// color is wider
             vColor.xyz = hsv2rgb(
-                noise(vec4(cx*colorFrequency, cy, time*colorVelocity, uDrawVariant)),
+                noise(vec4(colorVelocity*angle, time*colorVelocity, 0.0, uDrawVariant)),
                 1.0,
                 1.0
             );
             vColor.w = 1.0;
+
+            // POSITION
+            float displacementAmplitude = 16.0;
+            float displacementFrequency = 0.1;
+            float displacementVelocity = 2.0;
+            vec4 displacement = displacementAmplitude * vec4(
+                0.0,
+                audio.x-0.5,
+                0.0,
+                0.0
+            );
+            vPosition += displacement;
+
         } else if (uDrawMode == DRAW_MODE_MANDALA) {
             vec4 audio = texture(uAudioSampler, vec2(0.0, 0.0));
             float cx = aTextureCoordinates.x;
