@@ -126,6 +126,12 @@ void main(void) {
         sum /= float(iters);
         color = sum;
         skipEffect = true;
+    } else if (uDrawMode == DRAW_MODE_3D_SPHERICAL_GRID) {
+        if(vColor.w < 0.95){
+            color = vec4(0.0);
+        }else {
+            color = texture(uSampler[0], textureCoordinates)*vColor;
+        }
     } else {
         color = texture(uSampler[0], textureCoordinates)*vColor;
     }

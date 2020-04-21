@@ -45,7 +45,7 @@
     const DRAW_MODE_3D_TORUS = 6
     const DRAW_MODE_3D_MANDALA = 7
     const DRAW_MODE_3D_CUBE = 8
-
+    const DRAW_MODE_3D_SPHERICAL_GRID = 9
     /* eslint-enable no-unused-vars */
 
 
@@ -189,6 +189,7 @@
             let spaceModel = null;
             let torusModel = null;
             let cubeModel = null;
+            let sphereModel = null;
 
             const loader = new GLTFLoader();
             loader.load("models/ganesha.gltf", gltf => {
@@ -205,6 +206,9 @@
             });
             loader.load("models/cube.gltf", gltf => {
                 cubeModel = webGl.getModel(gl, gltf);
+            });
+            loader.load("models/sphere.gltf", gltf => {
+                sphereModel = webGl.getModel(gl, gltf);
             });
 
             // *******************
@@ -318,6 +322,10 @@
                 let rgbShiftAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, state.time,  state.time , transitionTime2), 0.6, 0.8 );
                 let waterAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, transitionTime2),0.6, 1.0);
                 let radialAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , transitionTime2),0.6 , 1.0);
+
+                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, transitionTime),0.5, 0.7);
+
+
                 let variant = 0;
                 if (viewMatrix == null) {
                     viewMatrix = glm.mat4.create();
@@ -430,6 +438,34 @@
 
                 }
 
+
+                // *******************
+                // Draw spherical grid
+                // *******************
+                if(sphericalGridAmount) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, sphericalGridAmount);
+
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_SPHERICAL_GRID);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+
+                    let position = glm.vec3.copy(TEMP_POSITION, modelPosition);
+                    let scale = glm.vec3.set(TEMP_SCALE, 32, 32, 32);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
+                    glm.mat4.scale(modelMatrix, modelMatrix, scale);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    for (let mesh of sphereModel) {
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
+
+                    }
+
+                }
+
                 // *************
                 // Draw cylinder
                 // *************
@@ -445,12 +481,13 @@
 
                     variant = 0;
                     for (let i = Math.PI / 3.0; i < 2 * Math.PI - 0.001; i += 2.0 * Math.PI / 3.0) {
-                        let position = glm.vec3.fromValues(-cylinderDistance * Math.sin(i), -128, -cylinderDistance * Math.cos(i));
+                        let position = glm.vec3.set(TEMP_POSITION, -cylinderDistance * Math.sin(i), -128, -cylinderDistance * Math.cos(i));
                         let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                        let scale = glm.vec3.set(TEMP_SCALE, 4, 4, 4);
 
                         glm.vec3.add(position, position, modelPosition);
                         glm.mat4.translate(modelMatrix, modelMatrix, position);
-                        glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
+                        glm.mat4.scale(modelMatrix, modelMatrix, scale);
                         gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                         webGl.drawMesh(gl, programInfo, cylinderMesh, gl.TRIANGLES);
@@ -662,7 +699,6 @@
                 if(radialAmount){
                     // common
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);

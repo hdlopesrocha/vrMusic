@@ -207,9 +207,39 @@ void main(void) {
                 1.0
             );
             vColor.w = 1.0;
+        } else if (uDrawMode == DRAW_MODE_3D_SPHERICAL_GRID) {
+            float colorVelocity = 0.2;// color changes quicker
+            float colorFrequency = 100.0;// color is wider
+            float angle = abs(atan(vPosition.z, vPosition.x))/PI;
+            vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
+            float time = uTime+audio.x;
+
+            float n = noise(vec4(vPosition.x*colorFrequency, vPosition.z*colorFrequency, vPosition.z*colorFrequency, time*colorVelocity));
+            float nx = noise(vec4(vPosition.y*colorFrequency, vPosition.x*colorFrequency, vPosition.z*colorFrequency, time*colorVelocity));
+            float ny = noise(vec4(vPosition.z*colorFrequency, vPosition.x*colorFrequency, vPosition.y*colorFrequency, time*colorVelocity));
+            float nz = noise(vec4(vPosition.z*colorFrequency, vPosition.y*colorFrequency,vPosition.x*colorFrequency, time*colorVelocity));
+
+            if(n<0.2){
+                vColor = vec4(0.0);
+            }else {
+                vColor.xyz = hsv2rgb(vec3(nx, ny*0.25+0.75, 1.0));
+                vColor.w = 1.0;
+            }
+
+            // POSITION
+            float displacementAmplitude = 4.0;
+            float displacementFrequency = 0.1;
+            float displacementVelocity = 2.0;
+            vec4 displacement = displacementAmplitude * vec4(
+                nx-0.5,
+                ny-0.5,
+                nz-0.5,
+                0.0
+            );
+            vPosition += displacement;
         }
 
-        mat3 vNormalMatrix = transpose(inverse(mat3(uModelMatrix)));
+            mat3 vNormalMatrix = transpose(inverse(mat3(uModelMatrix)));
         vNormal = normalize(vNormalMatrix * aVertexNormal.xyz);
         gl_Position = viewProjectionMatrix * vPosition;
         vTextureCoordinates = tTextureCoordinates;
