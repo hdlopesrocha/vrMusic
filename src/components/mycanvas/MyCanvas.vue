@@ -24,7 +24,7 @@
 
 <script>
     /* eslint-disable no-unused-vars */
-    const DEBUG = true;
+    const DEBUG = false;
     // 2D MODES
     const DRAW_MODE_2D_WATER = -8
     const DRAW_MODE_2D_SHIFT = -7
@@ -297,31 +297,28 @@
                     return val <min? min : val> max ? max: val;
                 }
 
-                function myClamp(val) {
-                    let margin = 0.3;
-
-                    return clamp((val - margin) / (1 - 2*margin), 0.0 , 1.0);
+                function lerp(val, min, max) {
+                    return clamp( (val-min)/(max - min) , 0.0 , 1.0);
                 }
 
                 let transitionTime = 8.0;
                 let transitionTime2 = 16.0;
 
-                let blurAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, transitionTime)+0.1 );
+                let blurAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, transitionTime),0.3 , 0.6);
 
-                let cylinderAmount = myClamp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time, 0.0, transitionTime));
-                let cubesAmount = myClamp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time, transitionTime));
+                let cylinderAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time, 0.0, transitionTime),0.4, 0.6);
+                let cubesAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time, transitionTime),0.4, 0.6);
 
-                let torusAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, state.time ,0.0, transitionTime));
-                let mandalaAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0, state.time , transitionTime));
-                let starsAmount = myClamp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time,  state.time , transitionTime));
+                let torusAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time ,0.0, transitionTime),0.4, 0.6);
+                let mandalaAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0, state.time , transitionTime),0.4, 0.6);
+                let starsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time,  state.time , transitionTime),0.4, 0.6);
 
-                let modelAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time , transitionTime));
+                let modelAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time , transitionTime),0.4, 0.5);
 
-                let rgbShiftAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time+1024, state.time,  state.time , transitionTime2)-0.1 );
-                let waterAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, transitionTime2)-0.1 );
-                let radialAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , transitionTime2)-0.1 );
+                let rgbShiftAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, state.time,  state.time , transitionTime2), 0.6, 0.8 );
+                let waterAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, transitionTime2),0.6, 1.0);
+                let radialAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , transitionTime2),0.6 , 1.0);
                 let variant = 0;
-
                 if (viewMatrix == null) {
                     viewMatrix = glm.mat4.create();
                     let center = glm.vec3.set(TEMP_CENTER, 0, 0, -1);

@@ -86,7 +86,7 @@ void main(void) {
         color.xyz += p2c*uEffectAmount*0.5;
         skipEffect = true;
     }else if(uDrawMode == DRAW_MODE_2D_SHIFT){
-        float pixelShift = 4.0;
+        float pixelShift = 8.0;
         vec2 shift = uEffectAmount*pixelShift/uCanvasSize;
 
         vec4 t1 = texture(uSampler[0], textureCoordinates+shift*vec2(-0.5,-0.5));
