@@ -450,5 +450,13 @@ export default {
     },
     toggleVR(gl, state) {
         state.vrToggle = true;
+    },
+    copyBuffer(gl, src, dest) {
+        gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, dest.frame);
+        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, src.frame);
+        gl.blitFramebuffer(0, 0, src.width, src.height, 0, 0, dest.width, dest.height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+
+        gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
+        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
     }
 }

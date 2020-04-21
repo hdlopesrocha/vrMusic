@@ -211,6 +211,9 @@
             // fun zone
             // ********
 
+
+
+
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
                 if(this.audioContext) {
@@ -646,10 +649,7 @@
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
                     // 1st pass
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, temporaryBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
-                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture);
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
 
                     // 2nd pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
@@ -671,10 +671,7 @@
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
                     // 1st pass
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, temporaryBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
-                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture);
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
 
                     // 2nd pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
@@ -696,10 +693,7 @@
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
                     // 1st pass
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, temporaryBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
-                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture);
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
 
                     // 2nd pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
