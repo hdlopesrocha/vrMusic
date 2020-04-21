@@ -207,6 +207,21 @@
                 cubeModel = webGl.getModel(gl, gltf);
             });
 
+            // *******************
+            // temporary variables
+            // *******************
+            let TEMP_UP = glm.vec3.create();
+            let TEMP_EYE = glm.vec3.create();
+            let TEMP_CENTER = glm.vec3.create();
+            let TEMP_POSITION = glm.vec3.create();
+            let TEMP_SCALE = glm.vec3.create();
+            let TEMP_DIRECTION = glm.vec3.create();
+            let TEMP_VIEW = glm.mat4.create();
+            let TEMP_MODEL = glm.mat4.create();
+            let cameraPosition = glm.vec3.create();
+            let modelPosition = glm.vec3.fromValues(0,0,-6);
+
+
             // ********
             // fun zone
             // ********
@@ -309,9 +324,9 @@
 
                 if (viewMatrix == null) {
                     viewMatrix = glm.mat4.create();
-                    let center = glm.vec3.fromValues(0, 0, -1);
-                    let up = glm.vec3.fromValues(0, 1, 0);
-                    let eye = glm.vec3.fromValues(0, 0, 0);
+                    let center = glm.vec3.set(TEMP_CENTER, 0, 0, -1);
+                    let up = glm.vec3.set(TEMP_UP, 0, 1, 0);
+                    let eye = glm.vec3.set(TEMP_EYE, 0, 0, 0);
                     glm.mat4.lookAt(viewMatrix, eye, center, up);
                 }
                 if (projectionMatrix == null) {
@@ -321,12 +336,12 @@
                 gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
                 gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
 
-                let invertedViewMatrix = glm.mat4.invert(glm.mat4.create(), viewMatrix);
-                let cameraPosition = glm.vec3.fromValues(invertedViewMatrix[12], invertedViewMatrix[13], invertedViewMatrix[14]);
-                gl.uniform3fv(programInfo.uniformLocations.cameraPosition, cameraPosition);
+                {
+                    let invertedViewMatrix = glm.mat4.invert(TEMP_VIEW, viewMatrix);
+                    glm.vec3.set(cameraPosition, invertedViewMatrix[12], invertedViewMatrix[13], invertedViewMatrix[14]);
+                    gl.uniform3fv(programInfo.uniformLocations.cameraPosition, cameraPosition);
+                }
 
-                let modelMatrix = glm.mat4.create();
-                let center = glm.vec3.fromValues(0,0,-6);
 
                 // **********
                 // Draw space
@@ -334,9 +349,9 @@
                 if(spaceModel) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
 
-                    glm.mat4.identity(modelMatrix);
-                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(400, 400, 400));
+                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.set(TEMP_SCALE, 400, 400, 400));
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_SKY);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -354,11 +369,13 @@
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, torusAmount);
 
-                    let position = glm.vec3.fromValues(0, 0, 0);
-                    glm.vec3.add(position, position, center);
-                    glm.mat4.identity(modelMatrix);
+                    let position = glm.vec3.set(TEMP_POSITION, 0, 0, 0);
+                    let scale =  glm.vec3.set(TEMP_SCALE, 32, 8.0, 32);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+
+                    glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(32, 8.0, 32));
+                    glm.mat4.scale(modelMatrix, modelMatrix, scale);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
@@ -391,15 +408,16 @@
                                 if(Math.abs(i) === size || Math.abs(j) === size || Math.abs(k) === size) {
                                     let noise = (webAudio.myNoise3dx(perlin.noise, state.time+i, state.time+j , state.time+k, 4.0)*0.2+ 0.8*this.dataArray[0]/255);
 
-                                    let position = glm.vec3.fromValues(i, j, k);
-                                    let direction = glm.vec3.create();
+                                    let position = glm.vec3.set(TEMP_POSITION, i, j, k);
+                                    let direction = glm.vec3.set(TEMP_DIRECTION, 0.0, 0.0, 0.0);
+                                    let scale = glm.vec3.set(TEMP_SCALE, 1.0, 1.0, 1.0);
+                                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
 
                                     glm.vec3.normalize(direction, position);
                                     glm.vec3.scale(position,direction,distance - noise * distance);
-                                    glm.vec3.add(position, position, center);
-                                    glm.mat4.identity(modelMatrix);
+                                    glm.vec3.add(position, position, modelPosition);
                                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(1.0, 1.0, 1.0));
+                                    glm.mat4.scale(modelMatrix, modelMatrix, scale);
                                     glm.mat4.rotate(modelMatrix, modelMatrix, noise*Math.PI*2.0, direction);
 
                                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -431,8 +449,9 @@
                     variant = 0;
                     for (let i = Math.PI / 3.0; i < 2 * Math.PI - 0.001; i += 2.0 * Math.PI / 3.0) {
                         let position = glm.vec3.fromValues(-cylinderDistance * Math.sin(i), -128, -cylinderDistance * Math.cos(i));
-                        glm.mat4.identity(modelMatrix);
-                        glm.vec3.add(position, position, center);
+                        let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+
+                        glm.vec3.add(position, position, modelPosition);
                         glm.mat4.translate(modelMatrix, modelMatrix, position);
                         glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(4, 4, 4));
                         gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
@@ -449,8 +468,8 @@
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, starsAmount);
 
-                    //let up = glm.vec3.fromValues(viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
-                    let up = glm.vec3.fromValues(0, 1, 0);
+                    //let up = glm.vec3.set(TEMP_UP, viewMatrix[4], viewMatrix[5] ,viewMatrix[6]);
+                    let up = glm.vec3.set(TEMP_UP ,0, 1, 0);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_BILLBOARD);
                     gl.disable(gl.DEPTH_TEST);
@@ -458,11 +477,13 @@
                     variant = 0;
                     for (let i = 0; i < 2.0 * Math.PI; i += Math.PI / 8.0) {
                         let r = 24.0;
-                        let position = glm.vec3.fromValues(r * Math.cos(i), 24.0, r * Math.sin(i));
-                        glm.vec3.add(position, position, center);
+                        let position = glm.vec3.set(TEMP_POSITION,  r * Math.cos(i), 24.0, r * Math.sin(i));
+                        let scale = glm.vec3.set(TEMP_SCALE, 2, 2, 2);
+                        let modelMatrix = glm.mat4.identity(TEMP_MODEL);
 
-                        modelMatrix = webGl.getBillboardMatrix(position, cameraPosition, up);
-                        glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(2, 2, 2));
+                        glm.vec3.add(position, position, modelPosition);
+                        modelMatrix = webGl.getBillboardMatrix(modelMatrix, position, cameraPosition, up);
+                        glm.mat4.scale(modelMatrix, modelMatrix, scale);
 
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                         gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 32.0);
@@ -477,12 +498,13 @@
                 if(mandalaModel && blurAmount) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, maskFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                    let position = glm.vec3.set(TEMP_POSITION, 0, -2.2, 0);
+                    let scale = glm.vec3.set(TEMP_SCALE, 8, 8, 8);
 
-                    let position = glm.vec3.fromValues(0, -2.2, 0);
-                    glm.vec3.add(position, position, center);
-                    glm.mat4.identity(modelMatrix);
+                    glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
+                    glm.mat4.scale(modelMatrix, modelMatrix, scale);
                     glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_MASK);
@@ -502,10 +524,10 @@
                 if(statueModel && blurAmount) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, maskFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                    let position = glm.vec3.set(TEMP_POSITION ,0, 0, 0);
 
-                    let position = glm.vec3.fromValues(0, 0, 0);
-                    glm.vec3.add(position, position, center);
-                    glm.mat4.identity(modelMatrix);
+                    glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
 
@@ -524,11 +546,13 @@
                 // ************
                 if(mandalaModel && mandalaAmount) {
                     // common
-                    let position = glm.vec3.fromValues(0, -2.2, 0);
-                    glm.vec3.add(position, position, center);
-                    glm.mat4.identity(modelMatrix);
+                    let position = glm.vec3.set(TEMP_POSITION, 0, -2.2, 0);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                    let scale = glm.vec3.set(TEMP_SCALE, 8, 8, 8);
+
+                    glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(8, 8, 8));
+                    glm.mat4.scale(modelMatrix, modelMatrix, scale);
                     glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
@@ -551,7 +575,7 @@
                     // common
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
-                    glm.mat4.identity(modelMatrix);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
@@ -573,9 +597,9 @@
                 // **********
                 if(statueModel) {
                     // common
-                    let position = glm.vec3.fromValues(0, 0, 0);
-                    glm.vec3.add(position, position, center);
-                    glm.mat4.identity(modelMatrix);
+                    let position = glm.vec3.set(TEMP_POSITION, 0, 0, 0);
+                    glm.vec3.add(position, position, modelPosition);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -598,7 +622,7 @@
                 // ****************
                 if(modelAmount){
                     // common
-                    glm.mat4.identity(modelMatrix);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.disable(gl.DEPTH_TEST);
@@ -616,9 +640,9 @@
                 // ****************
                 if(statueModel) {
                     // common
-                    let position = glm.vec3.fromValues(0, 0, 0);
-                    glm.vec3.add(position, position, center);
-                    glm.mat4.identity(modelMatrix);
+                    let position = glm.vec3.set(TEMP_POSITION, 0, 0, 0);
+                    glm.vec3.add(position, position, modelPosition);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -644,7 +668,7 @@
                     gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
-                    glm.mat4.identity(modelMatrix);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
@@ -666,7 +690,7 @@
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
-                    glm.mat4.identity(modelMatrix);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
@@ -688,7 +712,7 @@
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
-                    glm.mat4.identity(modelMatrix);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
@@ -708,7 +732,7 @@
                 {
                     // common
                     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-                    glm.mat4.identity(modelMatrix);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.disable(gl.DEPTH_TEST);
@@ -739,12 +763,16 @@
                     ];
                     let size = 0.25;
 
-                    glm.mat4.identity(modelMatrix);
-                    glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(-1.0-size ,1.0-size,0.0));
-                    glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.fromValues(size,size,1.0));
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                    let position = glm.vec3.set(TEMP_POSITION, -1.0-size ,1.0-size,0.0);
+                    let scale = glm.vec3.set(TEMP_SCALE, size,size,1.0);
+
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
+                    glm.mat4.scale(modelMatrix, modelMatrix, scale);
+                    position = glm.vec3.set(TEMP_POSITION, 0.5/size ,0.0, 0.0);
 
                     for(let texture of textures) {
-                        glm.mat4.translate(modelMatrix, modelMatrix, glm.vec3.fromValues(0.5/size ,0.0,0.0));
+                        glm.mat4.translate(modelMatrix, modelMatrix, position);
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                         webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, texture);
                     }

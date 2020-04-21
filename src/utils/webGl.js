@@ -392,14 +392,17 @@ export default {
 
         return texture;
     },
+    TEMP_TO: glm.vec3.create(),
+    TEMP_UP: glm.vec3.create(),
+    TEMP_RIGHT: glm.vec3.create(),
 
-    getBillboardMatrix: function (position, cameraPos, cameraUp) {
-        let to = glm.vec3.subtract(glm.vec3.create(), cameraPos, position);
+    getBillboardMatrix: function (matrix, position, cameraPos, cameraUp) {
+        let to = glm.vec3.subtract(glm.vec3.set(this.TEMP_TO, 0,0,0), cameraPos, position);
         let look = glm.vec3.normalize(to, to);
-        let right = glm.vec3.cross(glm.vec3.create(), cameraUp, look);
-        let up2 = glm.vec3.cross(glm.vec3.create(), look, right);
+        let right = glm.vec3.cross(glm.vec3.set(this.TEMP_RIGHT, 0,0,0), cameraUp, look);
+        let up2 = glm.vec3.cross(glm.vec3.set(this.TEMP_UP, 0,0,0), look, right);
 
-        return glm.mat4.fromValues(
+        return glm.mat4.set(matrix,
             right[0], right[1], right[2], 0,
             up2[0], up2[1], up2[2], 0,
             look[0], look[1], look[2], 0,
