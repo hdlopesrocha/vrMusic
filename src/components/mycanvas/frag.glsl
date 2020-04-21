@@ -71,7 +71,6 @@ void main(void) {
         vec3 n = normalize(cross(b-p,a-p));
 
         color =  vec4(n ,1.0);
-        // color = vec4(p.z, p.z,p.z ,1.0);
     } else if(uDrawMode == DRAW_MODE_2D_WATER){
         float dist = clamp(length(textureCoordinates-vec2(0.5))*sqrt(2.0), 0.0, 1.0);
         float factor = ( dist *dist*dist);
@@ -79,8 +78,17 @@ void main(void) {
 
         color = texture(uSampler[0], textureCoordinates+shift.xy*factor);
         color.xyz += length(shift)*factor;
+    }else if(uDrawMode == DRAW_MODE_2D_SHIFT){
+        float d = 1.0/uCanvasSize.y;
 
-        // color = vec4(p.z, p.z,p.z ,1.0);
+        float pix = 4.0;
+
+        vec4 t1 = texture(uSampler[0], textureCoordinates+vec2(-pix*d*0.5,-pix*d*0.5));
+        vec4 t2 = texture(uSampler[0], textureCoordinates+vec2(pix*d, 0.0));
+        vec4 t3 = texture(uSampler[0], textureCoordinates+vec2(0.0, pix*d));
+
+        color.xyz = vec3(t1.x, t2.y, t3.z);
+        color.w = 1.0;
     } else {
         color = texture(uSampler[0], textureCoordinates)*vColor;
     }

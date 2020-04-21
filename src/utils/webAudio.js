@@ -13,13 +13,15 @@ export default {
 
     myNoise3dx: function (noise, x, y, z, l) {
         var il = l;
-        var pe = 0.5;
+        var pe = 1.0;
         var re = 0;
         for (var i = 0; i < 7; ++i) {
+            pe *= 0.5;
             re += pe * this.myNoise3d(noise, x, y, z, il);
             il *= 0.5;
-            pe *= 0.5;
         }
+        re += pe * this.myNoise3d(noise, x, y, z, il);
+
         return re;
     },
 }

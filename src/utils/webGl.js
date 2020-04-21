@@ -173,6 +173,7 @@ export default {
                 cameraPosition: gl.getUniformLocation(shaderProgram, 'uCameraPosition'),
                 canvasSize: gl.getUniformLocation(shaderProgram, 'uCanvasSize'),
                 audioSampler: gl.getUniformLocation(shaderProgram, 'uAudioSampler'),
+                effectAmount: gl.getUniformLocation(shaderProgram, 'uEffectAmount'),
             },
         };
     },

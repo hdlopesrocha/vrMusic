@@ -39,6 +39,7 @@
     const DRAW_MODE_CUBE = 8
     const DRAW_MODE_2D_NORMAL_MAP = 9
     const DRAW_MODE_2D_WATER = 10
+    const DRAW_MODE_2D_SHIFT = 11
     /* eslint-enable no-unused-vars */
 
 
@@ -258,6 +259,7 @@
                 let mixFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.mixFrameBuffer, webGl.TRANSPARENT);
                 let waterFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.waterFrameBuffer, webGl.TRANSPARENT);
                 let normalFrameBuffer = createOrCleanFramebuffer(gl, 128,128, map.normalFrameBuffer, webGl.TRANSPARENT);
+                let rgbShiftFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.waterFrameBuffer, webGl.TRANSPARENT);
                 let debug = false;
 
                 state.map[index] = {
@@ -267,6 +269,7 @@
                     mixFrameBuffer: mixFrameBuffer,
                     waterFrameBuffer: waterFrameBuffer,
                     normalFrameBuffer: normalFrameBuffer,
+                    rgbShiftFrameBuffer: rgbShiftFrameBuffer,
                 };
 
 
@@ -296,6 +299,7 @@
                 let starsAmount = myClamp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time,  state.time , transitionTime));
 
                 let modelAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time , transitionTime));
+                let rgbShiftAmount = myClamp(webAudio.myNoise3dx(perlin.noise, state.time+1024, state.time,  state.time , transitionTime)-0.1 );
 
                 let variant = 0;
 
@@ -666,6 +670,32 @@
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, waterFrameBuffer.texture);
                 }
 
+                // **********
+                // DRAW SHIFT
+                // **********
+                if(rgbShiftAmount){
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    glm.mat4.identity(modelMatrix);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+
+                    // SHIFT
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, rgbShiftFrameBuffer.frame);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_SHIFT);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture);
+
+                    // SEND SHIFT TO DRAW
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, rgbShiftAmount);
+
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, rgbShiftFrameBuffer.texture);
+                }
+
+
                 // *****
                 // DEBUG
                 // *****
@@ -684,7 +714,8 @@
                         blurFrameBuffer.texture,
                         mixFrameBuffer.texture,
                         normalFrameBuffer.texture,
-                        waterFrameBuffer.texture
+                        waterFrameBuffer.texture,
+                        rgbShiftFrameBuffer.texture
                     ];
                     let size = 0.1;
 

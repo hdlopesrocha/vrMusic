@@ -37,6 +37,7 @@ void main(void) {
     || uDrawMode == DRAW_MODE_2D_MIX
     || uDrawMode == DRAW_MODE_2D_BLUR
     || uDrawMode == DRAW_MODE_2D_NORMAL_MAP
+    || uDrawMode == DRAW_MODE_2D_SHIFT
     || uDrawMode == DRAW_MODE_2D_WATER) {
         gl_Position = uOrthoMatrix * vPosition;
         vTextureCoordinates.x = tTextureCoordinates.x;
@@ -182,7 +183,7 @@ void main(void) {
                 1.0,
                 1.0
             );
-            vColor.w = 0.5;
+            vColor.w =1.0;
 
             // POSITION
             float displacementAmplitude = 16.0;
