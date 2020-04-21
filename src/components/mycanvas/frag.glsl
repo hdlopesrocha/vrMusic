@@ -36,6 +36,7 @@ vec3 calcPosition(vec2 pos, float t) {
 void main(void) {
     vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
     vec2 textureCoordinates = vTextureCoordinates;
+    bool skipEffect = false;
 
     if (uDrawMode == DRAW_MODE_2D_BLUR) {
         vec4 maskColor = texture(uSampler[1], textureCoordinates);
@@ -43,14 +44,15 @@ void main(void) {
             vec4 sum = vec4(0.0);
             vec2 delta = 1.0/uCanvasSize;
             int count = 0;
-            int size = 8;
+            int size = 4;
             for (int i=-size; i <= size; ++i) {
                 for (int j=-size; j <= size; ++j) {
                     sum += texture(uSampler[0], textureCoordinates+delta*vec2(i, j));
                     ++count;
                 }
             }
-            color = (sum / float(count));
+            color = (sum / float(count))*uEffectAmount+(1.0 - uEffectAmount)*texture(uSampler[0], textureCoordinates);
+            skipEffect=true;
         } else {
             color.w = 0.0;
         }
@@ -72,23 +74,60 @@ void main(void) {
 
         color =  vec4(n ,1.0);
     } else if(uDrawMode == DRAW_MODE_2D_WATER){
-        float dist = clamp(length(textureCoordinates-vec2(0.5))*sqrt(2.0), 0.0, 1.0);
-        float factor = ( dist *dist*dist);
+        vec2 dist = (vec2(0.5)-textureCoordinates);
+        float len = length(dist);
+        float p2c = 2.0*len / sqrt(2.0);
+        p2c*= p2c;
+        p2c*= p2c;
+
+
         vec4 shift = texture(uSampler[1], textureCoordinates)-0.5;
 
-        color = texture(uSampler[0], textureCoordinates+shift.xy*factor);
-        color.xyz += length(shift)*factor;
+        color = texture(uSampler[0], textureCoordinates+shift.xy*p2c*uEffectAmount);
+        color.xyz += length(shift)*p2c*uEffectAmount;
+        skipEffect = true;
     }else if(uDrawMode == DRAW_MODE_2D_SHIFT){
-        float d = 1.0/uCanvasSize.y;
+        vec2 delta = 1.0/uCanvasSize;
 
-        float pix = 4.0;
+        float pix = 4.0*uEffectAmount;
 
-        vec4 t1 = texture(uSampler[0], textureCoordinates+vec2(-pix*d*0.5,-pix*d*0.5));
-        vec4 t2 = texture(uSampler[0], textureCoordinates+vec2(pix*d, 0.0));
-        vec4 t3 = texture(uSampler[0], textureCoordinates+vec2(0.0, pix*d));
+        vec4 t1 = texture(uSampler[0], textureCoordinates+vec2(-pix*delta.x*0.5,-pix*delta.y*0.5));
+        vec4 t2 = texture(uSampler[0], textureCoordinates+vec2(pix*delta.x, 0.0));
+        vec4 t3 = texture(uSampler[0], textureCoordinates+vec2(0.0, pix*delta.y));
 
         color.xyz = vec3(t1.x, t2.y, t3.z);
         color.w = 1.0;
+        skipEffect = true;
+    } else if(uDrawMode == DRAW_MODE_2D_LENS){
+        vec2 dist = (vec2(0.5)-textureCoordinates);
+        float len = length(dist);
+        float p2c = 2.0*len / sqrt(2.0);
+        p2c*= p2c;
+        p2c*= p2c;
+
+        color.xyz = texture(uSampler[0], textureCoordinates+dist*p2c*uEffectAmount).xyz;
+        color.w = 1.0;
+        skipEffect = true;
+    } else if(uDrawMode == DRAW_MODE_2D_RADIAL){
+        vec2 delta = 4.0/uCanvasSize;
+
+        vec2 dist = (vec2(0.5)-textureCoordinates);
+        vec2 norm = normalize(dist);
+
+        float len = length(dist);
+        float p2c = 2.0*len / sqrt(2.0);
+        p2c*= p2c;
+        p2c*= p2c;
+
+        int maxIters= 32;
+        int iters = clamp(int( float(maxIters)*p2c*uEffectAmount ), 1, maxIters);
+        vec4 sum = vec4(0.0);
+        for(int i=0; i < iters; ++i){
+            sum += texture(uSampler[0], textureCoordinates+norm*delta*float(i));
+        }
+        sum /= float(iters);
+        color = sum;
+        skipEffect = true;
     } else {
         color = texture(uSampler[0], textureCoordinates)*vColor;
     }
@@ -117,7 +156,9 @@ void main(void) {
     if (uDrawMode == DRAW_MODE_SKY || uDrawMode == DRAW_MODE_BILLBOARD || uDrawMode == DRAW_MODE_MANDALA) {
         color.xyz *= vColor.xyz;
     }
-    color.w *= uEffectAmount;
+    if(!skipEffect) {
+        color.w *= uEffectAmount;
+    }
     fragColor = alphaBlend(color);
 
 }
