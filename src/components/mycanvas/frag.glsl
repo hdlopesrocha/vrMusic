@@ -35,11 +35,31 @@ vec3 getPositionAtCoords(vec2 pos, float t) {
 
 vec3 getNormalAtPosition(vec2 position, float textureNoiseFrequency) {
     float textureNoiseVelocity = 1.0;
-    float d = 1.0/uCanvasSize.y;
+    vec2 d = 1.0/uCanvasSize;
 
     vec3 p = getPositionAtCoords(textureNoiseFrequency*position, uTime*textureNoiseVelocity);
-    vec3 a = getPositionAtCoords(textureNoiseFrequency*position+ vec2(0.0, d), uTime*textureNoiseVelocity);
-    vec3 b = getPositionAtCoords(textureNoiseFrequency*position+ vec2(d, 0.0), uTime*textureNoiseVelocity);
+    vec3 a = getPositionAtCoords(textureNoiseFrequency*position+ vec2(0.0, d.y), uTime*textureNoiseVelocity);
+    vec3 b = getPositionAtCoords(textureNoiseFrequency*position+ vec2(d.x, 0.0), uTime*textureNoiseVelocity);
+    vec3 n = normalize(cross(b-p,a-p));
+    return n;
+}
+
+float toGrayScale(vec3 color){
+    return max(color.x, max(color.y, color.z));
+}
+
+
+vec3 getPositionAtTexture(vec2 pos) {
+    vec4 color = texture(uSampler[1], pos);
+    float height = toGrayScale(color.xyz);
+    return vec3(pos, height);
+}
+
+vec3 getNormalAtTexture(vec2 pos) {
+    vec2 d = 1.0/uCanvasSize;
+    vec3 p = getPositionAtTexture(pos);
+    vec3 a = getPositionAtTexture(pos+ vec2(0.0, d.y));
+    vec3 b = getPositionAtTexture(pos+ vec2(d.x, 0.0));
     vec3 n = normalize(cross(b-p,a-p));
     return n;
 }
@@ -85,7 +105,20 @@ void main(void) {
         color = texture(uSampler[0], textureCoordinates+normal.xy*p2c*uEffectAmount);
         color.xyz += p2c*uEffectAmount*0.5;
         skipEffect = true;
-    }else if(uDrawMode == DRAW_MODE_2D_SHIFT){
+    } else if(uDrawMode == DRAW_MODE_2D_NORMAL){
+        vec3 normal = getNormalAtTexture(textureCoordinates);
+        vec2 delta = 32.0/uCanvasSize;
+
+        vec4 height = texture(uSampler[1], textureCoordinates);
+        float superficialRefraction = 1.0 - toGrayScale(height.xyz);
+
+
+        color = texture(uSampler[0], textureCoordinates+normal.xy*delta*uEffectAmount*superficialRefraction);
+
+        //color = texture(uSampler[1], textureCoordinates);
+
+        skipEffect = true;
+    } else if(uDrawMode == DRAW_MODE_2D_SHIFT){
         float pixelShift = 8.0;
         vec2 shift = uEffectAmount*pixelShift/uCanvasSize;
 
@@ -127,6 +160,12 @@ void main(void) {
         color = sum;
         skipEffect = true;
     } else if (uDrawMode == DRAW_MODE_3D_SPHERICAL_GRID) {
+        if(vColor.w < 0.95){
+            color = vec4(0.0);
+        }else {
+            color = texture(uSampler[0], textureCoordinates)*vColor;
+        }
+    } else if (uDrawMode == DRAW_MODE_3D_HEXA_GRID) {
         if(vColor.w < 0.95){
             color = vec4(0.0);
         }else {

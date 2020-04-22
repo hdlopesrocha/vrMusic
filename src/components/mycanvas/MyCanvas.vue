@@ -26,6 +26,7 @@
     /* eslint-disable no-unused-vars */
     const DEBUG = false;
     // 2D MODES
+    const DRAW_MODE_2D_NORMAL= -9
     const DRAW_MODE_2D_WATER = -8
     const DRAW_MODE_2D_SHIFT = -7
     const DRAW_MODE_2D_RADIAL = -6
@@ -46,6 +47,7 @@
     const DRAW_MODE_3D_MANDALA = 7
     const DRAW_MODE_3D_CUBE = 8
     const DRAW_MODE_3D_SPHERICAL_GRID = 9
+    const DRAW_MODE_3D_HEXA_GRID = 10
     /* eslint-enable no-unused-vars */
 
 
@@ -166,6 +168,8 @@
             let flareTexture = webGl.loadTexture(gl, "textures/flare.png");
             let mandalaTexture = webGl.loadTexture(gl, "textures/mandala.png");
             let mandalaMaskTexture = webGl.loadTexture(gl, "textures/mandala_mask.png");
+            let hexaSphereTexture = webGl.loadTexture(gl, "textures/hexa_texture.png");
+            let hexaMaskTexture = webGl.loadTexture(gl, "textures/hexa_mask.png");
             let billboardMesh = webGl.createBillboard(gl);
 
             // **********************
@@ -190,6 +194,7 @@
             let torusModel = null;
             let cubeModel = null;
             let sphereModel = null;
+            let hexaModel = null;
 
             const loader = new GLTFLoader();
             loader.load("models/ganesha.gltf", gltf => {
@@ -210,7 +215,9 @@
             loader.load("models/sphere.gltf", gltf => {
                 sphereModel = webGl.getModel(gl, gltf);
             });
-
+            loader.load("models/hexa.gltf", gltf => {
+                hexaModel = webGl.getModel(gl, gltf);
+            });
             // *******************
             // temporary variables
             // *******************
@@ -253,12 +260,12 @@
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             }
 
-            function createOrCleanFramebuffer(gl, width, height, framebuffer, color){
+            function createOrCleanFramebuffer(gl, width, height, framebuffer, color, format){
                 if (!framebuffer || framebuffer.width !== width || framebuffer.height !== height) {
                     if (framebuffer != null) {
                         webGl.deleteFramebuffer(gl, framebuffer);
                     }
-                    framebuffer = webGl.createFramebuffer(gl, width, height, gl.RGBA);
+                    framebuffer = webGl.createFramebuffer(gl, width, height, format);
                 }
                 gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer.frame);
                 gl.clearColor(color[0], color[1], color[2], color[3]);
@@ -281,16 +288,18 @@
 
                 let map = state.map || {};
 
-                let drawFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.drawFrameBuffer, webGl.TRANSPARENT);
-                let maskFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.maskFrameBuffer, webGl.BLACK);
-                let alphaFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.alphaFrameBuffer, webGl.TRANSPARENT);
-                let temporaryBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.temporaryBuffer, webGl.TRANSPARENT);
+                let drawFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.drawFrameBuffer, webGl.TRANSPARENT,  gl.RGBA);
+                let maskFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.maskFrameBuffer, webGl.BLACK,  gl.RGBA);
+                let normalMaskFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.normalMaskFrameBuffer, webGl.BLACK,  gl.RGBA);
+                let alphaFrameBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.alphaFrameBuffer, webGl.TRANSPARENT, gl.RGBA);
+                let temporaryBuffer = createOrCleanFramebuffer(gl, viewport.width, viewport.height, map.temporaryBuffer, webGl.TRANSPARENT, gl.RGBA);
 
                 state.map = {
                     drawFrameBuffer: drawFrameBuffer,
                     maskFrameBuffer: maskFrameBuffer,
                     alphaFrameBuffer: alphaFrameBuffer,
-                    temporaryBuffer: temporaryBuffer
+                    temporaryBuffer: temporaryBuffer,
+                    normalMaskFrameBuffer: normalMaskFrameBuffer
                 };
 
                 gl.uniform1f(programInfo.uniformLocations.time, state.time+this.timeDisplacement);
@@ -302,6 +311,11 @@
                 }
 
                 function lerp(val, min, max) {
+                    if(val < min) {
+                        return 0.0;
+                    } else if(val>= max){
+                        return 1.0;
+                    }
                     return clamp( (val-min)/(max - min) , 0.0 , 1.0);
                 }
 
@@ -323,8 +337,15 @@
                 let waterAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, transitionTime2),0.6, 1.0);
                 let radialAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , transitionTime2),0.6 , 1.0);
 
-                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, transitionTime),0.5, 0.7);
+                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0,state.time+1024, 0.0, transitionTime),0.5, 0.7);
+                let hexaGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, transitionTime),0.5, 0.6);
 
+                if(DEBUG) {
+                    rgbShiftAmount=0.0;
+                    waterAmount =0.0;
+                    radialAmount =0.0;
+                    hexaGridAmount = 1.0;
+                }
 
                 let variant = 0;
                 if (viewMatrix == null) {
@@ -438,11 +459,10 @@
 
                 }
 
-
                 // *******************
                 // Draw spherical grid
                 // *******************
-                if(sphericalGridAmount) {
+                if(sphereModel && sphericalGridAmount) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, sphericalGridAmount);
 
@@ -463,7 +483,31 @@
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
 
                     }
+                }
 
+                // *******************
+                // Draw hexa grid mask
+                // *******************
+                if(hexaModel && hexaGridAmount) {
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, hexaGridAmount);
+
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_HEXA_GRID);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+
+                    let position = glm.vec3.copy(TEMP_POSITION, modelPosition);
+                    let scale = glm.vec3.set(TEMP_SCALE, 32, 32, 32);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
+                    glm.mat4.scale(modelMatrix, modelMatrix, scale);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, normalMaskFrameBuffer.frame);
+                    for (let mesh of hexaModel) {
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES, hexaMaskTexture);
+                    }
                 }
 
                 // *************
@@ -694,6 +738,53 @@
                 }
 
                 // ***********
+                // DRAW NORMAL
+                // ***********
+                {
+                    // common
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+
+                    // 1st pass
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+
+                    // 2nd pass
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_NORMAL);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture, normalMaskFrameBuffer.texture);
+                }
+
+                // *******************
+                // Draw hexa grid mask
+                // *******************
+                if(hexaModel && hexaGridAmount) {
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, hexaGridAmount);
+
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_HEXA_GRID);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+
+                    let position = glm.vec3.copy(TEMP_POSITION, modelPosition);
+                    let scale = glm.vec3.set(TEMP_SCALE, 32, 32, 32);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+
+                    glm.mat4.translate(modelMatrix, modelMatrix, position);
+                    glm.mat4.scale(modelMatrix, modelMatrix, scale);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    for (let mesh of hexaModel) {
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES, hexaSphereTexture);
+                    }
+                }
+                
+                // ***********
                 // DRAW RADIAL
                 // ***********
                 if(radialAmount){
@@ -793,8 +884,9 @@
                         audioTexture ,
                         maskFrameBuffer.texture,
                         alphaFrameBuffer.texture,
+                        normalMaskFrameBuffer.texture
                     ];
-                    let size = 0.25;
+                    let size = 0.1;
 
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     let position = glm.vec3.set(TEMP_POSITION, -1.0-size ,1.0-size,0.0);
@@ -802,7 +894,7 @@
 
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
-                    position = glm.vec3.set(TEMP_POSITION, 0.5/size ,0.0, 0.0);
+                    position = glm.vec3.set(TEMP_POSITION, 2.0 ,0.0, 0.0);
 
                     for(let texture of textures) {
                         glm.mat4.translate(modelMatrix, modelMatrix, position);
