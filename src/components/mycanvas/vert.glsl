@@ -17,6 +17,8 @@ uniform mat4 uProjectionMatrix;
 uniform mat4 uModelMatrix;
 uniform vec3 uLightDirection;
 uniform float uTime;
+uniform float uTimeShift;
+uniform float uAnimationVelocity;
 uniform float uAudioLevel;
 
 out vec4 vColor;
@@ -48,7 +50,9 @@ void main(void) {
             float cx = aTextureCoordinates.x;
             float cy = cos(aTextureCoordinates.y*2.0*PI);
 
-            float time = uTime+uAudioLevel;
+            float time = uTimeShift*uAnimationVelocity+uAudioLevel;
+
+            float timeGeometry = uTimeShift*uAnimationVelocity;
 
             // COLOR
             float colorVelocity = 0.5;// color changes quicker
@@ -64,15 +68,14 @@ void main(void) {
             float textureNoiseVelocity = 0.2;
             float textureNoiseFrequency = 0.5;
             vec2 noiseTexture = vec2(
-                noise(vec4(cx, cy, uTime*textureNoiseVelocity, uDrawVariant)*textureNoiseFrequency),
-                noise(vec4(uDrawVariant, cx, cy, uTime*textureNoiseVelocity)*textureNoiseFrequency)
+                noise(vec4(cx, cy, timeGeometry*textureNoiseVelocity, uDrawVariant)*textureNoiseFrequency),
+                noise(vec4(uDrawVariant, cx, cy, timeGeometry*textureNoiseVelocity)*textureNoiseFrequency)
             );
-
             vec2 textureVelocity = vec2(-0.5, 0.1);
             float textureRotation = 0.5;
             float textureWaveSize = 0.4;
 
-            vec2 dTextureCoordinates = uTime*textureVelocity + noiseTexture*textureWaveSize;
+            vec2 dTextureCoordinates = timeGeometry*textureVelocity + noiseTexture*textureWaveSize;
             dTextureCoordinates.y=textureRotation*sin(dTextureCoordinates.y);
             tTextureCoordinates += dTextureCoordinates;
 
@@ -81,9 +84,9 @@ void main(void) {
             float displacementFrequency = 0.05;
             float displacementVelocity = 0.05;
             vec4 displacement = displacementAmplitude * vec4(
-                noise(vec3(uDrawVariant, vPosition.y*displacementFrequency, time*displacementVelocity)),
+                noise(vec3(uDrawVariant, vPosition.y*displacementFrequency, timeGeometry*displacementVelocity)),
                 0.0,
-                noise(vec3(uDrawVariant, time*displacementVelocity, vPosition.y*displacementFrequency)),
+                noise(vec3(uDrawVariant, timeGeometry*displacementVelocity, vPosition.y*displacementFrequency)),
                 0.0
             );
             vPosition += displacement;

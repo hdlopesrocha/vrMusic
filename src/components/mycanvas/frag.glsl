@@ -9,6 +9,8 @@ uniform float uEffectAmount;
 
 uniform bool uEnableLight;
 uniform float uTime;
+uniform float uTimeShift;
+uniform float uAnimationVelocity;
 uniform float uAudioLevel;
 uniform vec3 uLightDirection;
 uniform vec3 uCameraPosition;

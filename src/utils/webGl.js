@@ -169,6 +169,8 @@ export default {
                 drawMode: gl.getUniformLocation(shaderProgram, 'uDrawMode'),
                 drawVariant: gl.getUniformLocation(shaderProgram, 'uDrawVariant'),
                 time: gl.getUniformLocation(shaderProgram, 'uTime'),
+                timeShift: gl.getUniformLocation(shaderProgram, 'uTimeShift'),
+                animationVelocity: gl.getUniformLocation(shaderProgram, 'uAnimationVelocity'),
                 lightDirection: gl.getUniformLocation(shaderProgram, 'uLightDirection'),
                 cameraPosition: gl.getUniformLocation(shaderProgram, 'uCameraPosition'),
                 canvasSize: gl.getUniformLocation(shaderProgram, 'uCanvasSize'),

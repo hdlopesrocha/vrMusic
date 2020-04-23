@@ -79,7 +79,6 @@
                 analyser: null,
                 freqArray: null,
                 dataArray: null,
-                timeDisplacement: 0,
                 fftSize: 512,
                 audioLevel: 0,
                 softAudioLevel: 0,
@@ -272,7 +271,6 @@
                         let amountToShift = clamp(state.delta / timeToConverge, 0.0, 1.0);
                         this.softAudioLevel = (1.0-amountToShift)*this.softAudioLevel + amountToShift*this.audioLevel;
                     }
-                    this.timeDisplacement = 0.0;
                 }
             }
 
@@ -326,20 +324,21 @@
                     normalMaskFrameBuffer: normalMaskFrameBuffer
                 };
 
-                gl.uniform1f(programInfo.uniformLocations.time, state.time+this.timeDisplacement);
+                this.timeShift += state.delta*this.softAudioLevel;
+
+                gl.uniform1f(programInfo.uniformLocations.time, state.time);
+                gl.uniform1f(programInfo.uniformLocations.timeShift, this.timeShift);
                 gl.uniform1f(programInfo.uniformLocations.audioLevel, this.audioLevel);
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
                 gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
 
                 let transitionTime = 8.0;
                 let transitionTime2 = 16.0;
-                let timeVelocity = 2.0;
-                this.timeShift += state.delta*timeVelocity*this.softAudioLevel;
 
                 let blurAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, transitionTime),0.3 , 0.6);
 
                 let cylinderAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time, 0.0, transitionTime),0.4, 0.6);
-                let cubesAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time, transitionTime),0.4, 0.6);
+                let cubesAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time, transitionTime),0.5, 0.7);
 
                 let torusAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time ,0.0, transitionTime),0.4, 0.6);
                 let mandalaAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0, state.time , transitionTime),0.4, 0.6);
@@ -351,9 +350,9 @@
                 let waterAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, transitionTime2),0.6, 1.0);
                 let radialAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , transitionTime2),0.6 , 1.0);
 
-                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, 0.0, 0.0, transitionTime),0.6, 0.8);
-                let hexaGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0,state.time+1024, 0.0, transitionTime),0.6, 0.8);
-                let pyramidsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, transitionTime),0.6, 0.8);
+                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, 0.0, 0.0, transitionTime),0.5, 0.7);
+                let hexaGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0,state.time+1024, 0.0, transitionTime),0.5, 0.7);
+                let pyramidsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, transitionTime),0.5, 0.7);
 
                 if(DEBUG) {
                     rgbShiftAmount=0.0;
@@ -562,6 +561,7 @@
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1f(programInfo.uniformLocations.animationVelocity, 4.0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_CYLINDER);
                     let cylinderDistance = 20;
 
