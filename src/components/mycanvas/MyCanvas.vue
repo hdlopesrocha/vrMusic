@@ -24,7 +24,7 @@
 
 <script>
     /* eslint-disable no-unused-vars */
-    const DEBUG = true;
+    const DEBUG = false;
     // 2D MODES
     const DRAW_MODE_2D_NORMAL= -9
     const DRAW_MODE_2D_WATER = -8
@@ -81,7 +81,9 @@
                 dataArray: null,
                 timeDisplacement: 0,
                 fftSize: 512,
-                audioLevel: 0
+                audioLevel: 0,
+                softAudioLevel: 0,
+                timeShift: 0,
             }
         },
         methods: {
@@ -245,7 +247,18 @@
             // ********
 
 
+            function clamp(val, min, max) {
+                return val <min? min : val> max ? max: val;
+            }
 
+            function lerp(val, min, max) {
+                if(val < min) {
+                    return 0.0;
+                } else if(val>= max){
+                    return 1.0;
+                }
+                return clamp( (val-min)/(max - min) , 0.0 , 1.0);
+            }
 
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
@@ -253,8 +266,11 @@
                     if (this.analyser) {
                         this.analyser.getByteTimeDomainData(this.dataArray);
                         webGl.loadAudio(gl,audioTexture, this.fftSize, this.dataArray);
-                        this.audioLevel = 2.0*( webAudio.max(this.dataArray) / 255.0 - 0.5);
                         webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, audioTexture);
+                        this.audioLevel = 2.0*( webAudio.max(this.dataArray) / 255.0 - 0.5);
+                        let timeToConverge = 0.25;
+                        let amountToShift = clamp(state.delta / timeToConverge, 0.0, 1.0);
+                        this.softAudioLevel = (1.0-amountToShift)*this.softAudioLevel + amountToShift*this.audioLevel;
                     }
                     this.timeDisplacement = 0.0;
                 }
@@ -315,21 +331,10 @@
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
                 gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
 
-                function clamp(val, min, max) {
-                    return val <min? min : val> max ? max: val;
-                }
-
-                function lerp(val, min, max) {
-                    if(val < min) {
-                        return 0.0;
-                    } else if(val>= max){
-                        return 1.0;
-                    }
-                    return clamp( (val-min)/(max - min) , 0.0 , 1.0);
-                }
-
                 let transitionTime = 8.0;
                 let transitionTime2 = 16.0;
+                let timeVelocity = 2.0;
+                this.timeShift += state.delta*timeVelocity*this.softAudioLevel;
 
                 let blurAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, transitionTime),0.3 , 0.6);
 
@@ -442,7 +447,7 @@
                         for(let j = -size; j <= size; ++j) {
                             for(let k = -size; k <= size; ++k) {
                                 if(Math.abs(i) === size || Math.abs(j) === size || Math.abs(k) === size) {
-                                    let noise = this.audioLevel;
+                                    let noise = this.softAudioLevel;
 
                                     let position = glm.vec3.set(TEMP_POSITION, i, j, k);
                                     let direction = glm.vec3.set(TEMP_DIRECTION, 0.0, 0.0, 0.0);
@@ -491,7 +496,7 @@
                         glm.vec3.add(position, position, modelPosition);
                         glm.mat4.translate(modelMatrix, modelMatrix, position);
                         glm.mat4.scale(modelMatrix, modelMatrix, scale);
-                        glm.mat4.rotateY(modelMatrix, modelMatrix, -(state.time + this.audioLevel)* 1.0);
+                        glm.mat4.rotateY(modelMatrix, modelMatrix, -this.timeShift);
                         gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
                         gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                         for (let mesh of pyramidModel) {
@@ -620,7 +625,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1- this.audioLevel*0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, -this.timeShift);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_MASK);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -644,7 +649,7 @@
 
                     glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1- this.audioLevel*0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - this.timeShift);
 
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
@@ -668,7 +673,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1- this.audioLevel*0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, -this.timeShift);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
@@ -716,7 +721,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1- this.audioLevel*0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - this.timeShift);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
@@ -759,7 +764,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1- this.audioLevel*0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - this.timeShift);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
