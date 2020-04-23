@@ -1,7 +1,5 @@
 <template>
     <div>
-        <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
-
         <table>
             <tr>
                 <td>Step 1:</td>
@@ -18,6 +16,7 @@
                 </td>
             </tr>
         </table>
+        <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
         <input id="file" ref="file" style="display: none" v-on:change="enableMusic" type="file" name="file" accept="audio/*">
     </div>
 </template>
@@ -65,12 +64,11 @@
     import * as glm from 'gl-matrix'
     import GLTFLoader from 'three-gltf-loader';
     export default {
-        name: "WebGl",
-
+        name: "VrMusic",
         data() {
             return {
-                canvasWidth: 512,
-                canvasHeight: 512,
+                canvasWidth: window.innerWidth,
+                canvasHeight: window.innerHeight,
                 state: null,
                 gl: null,
                 source: null,
@@ -138,6 +136,11 @@
             canvas.addEventListener("contextmenu", (event) => {
                 event.preventDefault();
             });
+            window.addEventListener("resize", function() {
+                this.canvasWidth= window.innerWidth;
+                this.canvasHeight= window.innerHeight;
+                console.log(this);
+            }.bind(this));
 
             let fShader = fragmentShader
                 .replace("//#PERLIN", perlinShader)
@@ -237,6 +240,7 @@
             let TEMP_DIRECTION = glm.vec3.create();
             let TEMP_VIEW = glm.mat4.create();
             let TEMP_MODEL = glm.mat4.create();
+            let TEMP_PROJECTION = glm.mat4.create();
             let cameraPosition = glm.vec3.create();
             let modelPosition = glm.vec3.fromValues(0,0,-6);
 
@@ -334,6 +338,7 @@
 
                 let transitionTime = 8.0;
                 let transitionTime2 = 16.0;
+                let angularVelocity = 0.5;
 
                 let blurAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, transitionTime),0.3 , 0.6);
 
@@ -370,7 +375,7 @@
                     glm.mat4.lookAt(viewMatrix, eye, center, up);
                 }
                 if (projectionMatrix == null) {
-                    projectionMatrix = glm.mat4.create();
+                    projectionMatrix = glm.mat4.identity(TEMP_PROJECTION);
                     glm.mat4.perspective(projectionMatrix, 90 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 1000.0);
                 }
                 gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix, false, viewMatrix);
@@ -561,7 +566,7 @@
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1f(programInfo.uniformLocations.animationVelocity, 4.0);
+                    gl.uniform1f(programInfo.uniformLocations.animationVelocity, 2.0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_CYLINDER);
                     let cylinderDistance = 20;
 
@@ -625,7 +630,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, -this.timeShift);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, -this.timeShift*angularVelocity);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_MASK);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -649,7 +654,7 @@
 
                     glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - this.timeShift);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - this.timeShift*angularVelocity);
 
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
@@ -673,7 +678,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, -this.timeShift);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, -this.timeShift*angularVelocity);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
@@ -721,7 +726,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - this.timeShift);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - this.timeShift*angularVelocity);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
@@ -764,7 +769,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - this.timeShift);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - this.timeShift*angularVelocity);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
@@ -956,7 +961,10 @@
 </script>
 
 <style scoped>
-
+    table {
+        position: absolute;
+        color: white;
+    }
     button {
         padding: 10px;
     }
