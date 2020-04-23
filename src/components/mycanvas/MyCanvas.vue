@@ -79,7 +79,8 @@
                 freqArray: null,
                 dataArray: null,
                 timeDisplacement: 0,
-                fftSize: 512
+                fftSize: 512,
+                audioLevel: 0
             }
         },
         methods: {
@@ -246,6 +247,8 @@
                     if (this.analyser) {
                         this.analyser.getByteTimeDomainData(this.dataArray);
                         webGl.loadAudio(gl,audioTexture, this.fftSize, this.dataArray);
+                        this.audioLevel = 2.0*( webAudio.max(this.dataArray) / 255.0 - 0.5);
+                        console.log(this.audioLevel);
                         webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, audioTexture);
                     }
                     this.timeDisplacement = 0.0;
@@ -303,6 +306,7 @@
                 };
 
                 gl.uniform1f(programInfo.uniformLocations.time, state.time+this.timeDisplacement);
+                gl.uniform1f(programInfo.uniformLocations.audioLevel, this.audioLevel);
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
                 gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
 
@@ -432,7 +436,7 @@
                         for(let j = -size; j <= size; ++j) {
                             for(let k = -size; k <= size; ++k) {
                                 if(Math.abs(i) === size || Math.abs(j) === size || Math.abs(k) === size) {
-                                    let noise = (webAudio.myNoise3dx(perlin.noise, state.time+i, state.time+j , state.time+k, 4.0)*0.2+ 0.8*this.dataArray[0]/255);
+                                    let noise = this.audioLevel;
 
                                     let position = glm.vec3.set(TEMP_POSITION, i, j, k);
                                     let direction = glm.vec3.set(TEMP_DIRECTION, 0.0, 0.0, 0.0);
@@ -440,7 +444,7 @@
                                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
 
                                     glm.vec3.normalize(direction, position);
-                                    glm.vec3.scale(position,direction,distance - noise * distance);
+                                    glm.vec3.scale(position,direction,distance * (1.0 - noise));
                                     glm.vec3.add(position, position, modelPosition);
                                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                                     glm.mat4.scale(modelMatrix, modelMatrix, scale);

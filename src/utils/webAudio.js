@@ -24,4 +24,11 @@ export default {
 
         return re;
     },
+    max(array) {
+        let m = 0;
+        for (let i = 0; i < array.length; ++i) {
+            m = Math.max(m, array[i]);
+        }
+        return m;
+    }
 }

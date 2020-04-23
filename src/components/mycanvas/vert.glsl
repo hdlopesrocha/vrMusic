@@ -17,6 +17,7 @@ uniform mat4 uProjectionMatrix;
 uniform mat4 uModelMatrix;
 uniform vec3 uLightDirection;
 uniform float uTime;
+uniform float uAudioLevel;
 
 out vec4 vColor;
 out vec3 vNormal;
@@ -46,9 +47,8 @@ void main(void) {
         if (uDrawMode == DRAW_MODE_3D_CYLINDER) {
             float cx = aTextureCoordinates.x;
             float cy = cos(aTextureCoordinates.y*2.0*PI);
-            vec4 audio = texture(uAudioSampler, vec2(0.0, 0.0));
 
-            float time = uTime+audio.x;
+            float time = uTime+uAudioLevel;
 
             // COLOR
             float colorVelocity = 0.5;// color changes quicker
@@ -90,10 +90,7 @@ void main(void) {
         } else if (uDrawMode == DRAW_MODE_3D_EDGES) {
             float cx = aTextureCoordinates.x;
             float cy = cos(aTextureCoordinates.y*PI);
-            vec4 audio = texture(uAudioSampler, vec2(cy, 0.0));
-
-            float time = uTime+audio.x;
-
+            float time = uTime+uAudioLevel;
 
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
@@ -107,9 +104,8 @@ void main(void) {
         } else if (uDrawMode == DRAW_MODE_3D_SKY) {
             float cx = 0.0;
             float cy = cos(aTextureCoordinates.y*PI*2.0);
-            vec4 audio = texture(uAudioSampler, vec2(0.0, 0.0));
+            float time = uTime+uAudioLevel;
 
-            float time = uTime+audio.x*2.0;
 
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
@@ -123,8 +119,7 @@ void main(void) {
         } else if (uDrawMode == DRAW_MODE_3D_BILLBOARD) {
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
             vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
-
-            float time = uTime;
+            float time = uTime+uAudioLevel;
 
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
@@ -152,7 +147,7 @@ void main(void) {
             vec4 audio = texture(uAudioSampler, vec2(0.0, 0.0));
             float cx = aTextureCoordinates.x;
             float cy = aTextureCoordinates.y;
-            float time = uTime+audio.x*4.0;
+            float time = uTime+uAudioLevel;
 
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
@@ -168,7 +163,7 @@ void main(void) {
             vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
             float cx = 0.0;
             float cy = angle;
-            float time = uTime+audio.x;
+            float time = uTime+uAudioLevel;
 
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
@@ -193,10 +188,9 @@ void main(void) {
             vPosition += displacement;
         } else if (uDrawMode == DRAW_MODE_3D_CUBE) {
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
-            vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
             float cx = 0.0;
             float cy = angle;
-            float time = uTime+audio.x;
+            float time = uTime+uAudioLevel;
 
             // COLOR
             float colorVelocity = 0.2;// color changes quicker
@@ -214,8 +208,7 @@ void main(void) {
             float colorVelocity = 0.2;// color changes quicker
             float colorFrequency = 0.05;// color is wider
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
-            vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
-            float time = uTime+audio.x;
+            float time = uTime+uAudioLevel;
 
             float n = noise(vec4(vPosition.x*geometryFrequency, vPosition.y*geometryFrequency, vPosition.z*geometryFrequency, time*geometryVelocity));
 
@@ -251,8 +244,7 @@ void main(void) {
             float colorVelocity = 0.2;// color changes quicker
             float colorFrequency = 0.05;// color is wider
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
-            vec4 audio = texture(uAudioSampler, vec2(angle, 0.0));
-            float time = uTime+audio.x;
+            float time = uTime+uAudioLevel;
 
             float n = noise(vec4(vPosition.x*geometryFrequency, vPosition.y*geometryFrequency, vPosition.z*geometryFrequency, time*geometryVelocity));
 
