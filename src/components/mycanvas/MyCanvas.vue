@@ -1,6 +1,6 @@
 <template>
     <div>
-        <table>
+        <table v-if="!hidden">
             <tr>
                 <td>Step 1:</td>
                 <td>
@@ -13,6 +13,20 @@
                 <td>Step 2:</td>
                 <td>
                     <button v-on:click="enableVr" >Enter VR</button>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    Donate:
+                    <ul>
+                        <li>BTC: 37z5ap84nNA1VMrF8QNJ6XYVGrKn1GopKH</li>
+                        <li>ETH: 0x13CBcCCA8910DdCc007aa73eed031E2C7eE1Bf62</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <button v-on:click="hideTable" >Hide</button>
                 </td>
             </tr>
         </table>
@@ -81,6 +95,7 @@
                 audioLevel: 0,
                 softAudioLevel: 0,
                 timeShift: 0,
+                hidden: false,
             }
         },
         methods: {
@@ -101,6 +116,9 @@
                     navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
                     navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(handleSound.bind(this));
                 }
+            },
+            hideTable() {
+                this.hidden = true;
             },
             pickFile(){
                 this.$refs.file.click();
@@ -964,8 +982,12 @@
     table {
         position: absolute;
         color: white;
+        background: rgba(0,0,0,0.75);
     }
     button {
         padding: 10px;
+    }
+    li {
+        font-size: 10px;
     }
 </style>
