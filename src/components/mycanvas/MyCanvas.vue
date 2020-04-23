@@ -740,7 +740,7 @@
                 // ***********
                 // DRAW NORMAL
                 // ***********
-                {
+                if(hexaGridAmount){
                     // common
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     gl.disable(gl.DEPTH_TEST);
