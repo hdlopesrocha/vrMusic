@@ -262,6 +262,11 @@ export default {
         let indices = geometry.index.array;
         let image = mesh.material.map ? mesh.material.map.image : null;
 
+        if(!vertices || !normals || !texture_coordinates || !indices
+            || !vertices.length || !normals.length || !texture_coordinates.length || !indices.length) {
+            console.error("Model error");
+        }
+
         return this.createArrayBuffers(gl, vertices, normals, texture_coordinates, indices, image ? this.loadImage(gl, image) : null);
     },
     getModel(gl, gltf) {

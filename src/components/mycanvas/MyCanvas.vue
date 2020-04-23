@@ -48,6 +48,7 @@
     const DRAW_MODE_3D_CUBE = 8
     const DRAW_MODE_3D_SPHERICAL_GRID = 9
     const DRAW_MODE_3D_HEXA_GRID = 10
+    const DRAW_MODE_3D_PYRAMID = 11
     /* eslint-enable no-unused-vars */
 
 
@@ -196,6 +197,7 @@
             let cubeModel = null;
             let sphereModel = null;
             let hexaModel = null;
+            let pyramidModel = null;
 
             const loader = new GLTFLoader();
             loader.load("models/ganesha.gltf", gltf => {
@@ -219,6 +221,10 @@
             loader.load("models/hexa.gltf", gltf => {
                 hexaModel = webGl.getModel(gl, gltf);
             });
+            loader.load("models/pyramid.gltf", gltf => {
+                pyramidModel = webGl.getModel(gl, gltf);
+            });
+
             // *******************
             // temporary variables
             // *******************
@@ -340,8 +346,9 @@
                 let waterAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, transitionTime2),0.6, 1.0);
                 let radialAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , transitionTime2),0.6 , 1.0);
 
-                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0,state.time+1024, 0.0, transitionTime),0.5, 0.7);
-                let hexaGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, transitionTime),0.5, 0.6);
+                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, 0.0, 0.0, transitionTime),0.6, 0.8);
+                let hexaGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0,state.time+1024, 0.0, transitionTime),0.6, 0.8);
+                let pyramidsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, transitionTime),0.6, 0.8);
 
                 if(DEBUG) {
                     rgbShiftAmount=0.0;
@@ -460,6 +467,37 @@
                         }
                     }
 
+                }
+
+                // *************
+                // Draw pyramids
+                // *************
+                if(pyramidModel && pyramidsAmount){
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, pyramidsAmount);
+
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_PYRAMID);
+                    let cylinderDistance = 32;
+
+                    variant = 0;
+                    for (let i = Math.PI / 3.0; i < 2 * Math.PI - 0.001; i += Math.PI / 3.0) {
+                        let position = glm.vec3.set(TEMP_POSITION, -cylinderDistance * Math.sin(i), 0, -cylinderDistance * Math.cos(i));
+                        let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                        let scale = glm.vec3.set(TEMP_SCALE, 4, 4, 4);
+
+                        glm.vec3.add(position, position, modelPosition);
+                        glm.mat4.translate(modelMatrix, modelMatrix, position);
+                        glm.mat4.scale(modelMatrix, modelMatrix, scale);
+                        glm.mat4.rotateY(modelMatrix, modelMatrix, -(state.time + this.audioLevel)* 1.0);
+                        gl.uniform1f(programInfo.uniformLocations.drawVariant, ++variant * 4.0);
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                        for (let mesh of pyramidModel) {
+                            webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
+                        }
+                    }
                 }
 
                 // *******************
@@ -582,7 +620,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1- this.audioLevel*0.1);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_MASK);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
@@ -606,7 +644,7 @@
 
                     glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1- this.audioLevel*0.1);
 
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
@@ -630,7 +668,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, -state.time * 0.1- this.audioLevel*0.1);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
@@ -678,7 +716,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1- this.audioLevel*0.1);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
@@ -721,7 +759,7 @@
                     glm.vec3.add(position, position, modelPosition);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     glm.mat4.translate(modelMatrix, modelMatrix, position);
-                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1);
+                    glm.mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 2.0 - state.time * 0.1- this.audioLevel*0.1);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
