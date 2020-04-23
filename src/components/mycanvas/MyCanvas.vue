@@ -24,7 +24,7 @@
 
 <script>
     /* eslint-disable no-unused-vars */
-    const DEBUG = false;
+    const DEBUG = true;
     // 2D MODES
     const DRAW_MODE_2D_NORMAL= -9
     const DRAW_MODE_2D_WATER = -8
@@ -248,7 +248,6 @@
                         this.analyser.getByteTimeDomainData(this.dataArray);
                         webGl.loadAudio(gl,audioTexture, this.fftSize, this.dataArray);
                         this.audioLevel = 2.0*( webAudio.max(this.dataArray) / 255.0 - 0.5);
-                        console.log(this.audioLevel);
                         webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, audioTexture);
                     }
                     this.timeDisplacement = 0.0;
@@ -475,11 +474,9 @@
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    let position = glm.vec3.copy(TEMP_POSITION, modelPosition);
-                    let scale = glm.vec3.set(TEMP_SCALE, 32, 32, 32);
+                    let scale = glm.vec3.set(TEMP_SCALE, 4, 4, 4);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
 
-                    glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
@@ -500,11 +497,9 @@
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    let position = glm.vec3.copy(TEMP_POSITION, modelPosition);
-                    let scale = glm.vec3.set(TEMP_SCALE, 32, 32, 32);
+                    let scale = glm.vec3.set(TEMP_SCALE, 2, 2, 2);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
 
-                    glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 
@@ -774,11 +769,9 @@
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
-                    let position = glm.vec3.copy(TEMP_POSITION, modelPosition);
-                    let scale = glm.vec3.set(TEMP_SCALE, 32, 32, 32);
+                    let scale = glm.vec3.set(TEMP_SCALE, 2, 2, 2);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
 
-                    glm.mat4.translate(modelMatrix, modelMatrix, position);
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
 

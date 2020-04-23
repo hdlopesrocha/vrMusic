@@ -203,10 +203,10 @@ void main(void) {
             vColor.w = 1.0;
         } else if (uDrawMode == DRAW_MODE_3D_SPHERICAL_GRID) {
             float geometryVelocity = 0.2;// color changes quicker
-            float geometryFrequency = 100.0;// color is wider
+            float geometryFrequency = 800.0;// color is wider
 
             float colorVelocity = 0.2;// color changes quicker
-            float colorFrequency = 0.05;// color is wider
+            float colorFrequency = 0.4;// color is wider
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
             float time = uTime+uAudioLevel;
 
@@ -227,7 +227,7 @@ void main(void) {
             }
 
             // POSITION
-            float displacementAmplitude = 4.0;
+            float displacementAmplitude = 0.5;
             float displacementFrequency = 0.1;
             float displacementVelocity = 2.0;
             vec4 displacement = displacementAmplitude * vec4(
@@ -239,10 +239,10 @@ void main(void) {
             vPosition += displacement;
         }else if (uDrawMode == DRAW_MODE_3D_HEXA_GRID) {
             float geometryVelocity = 0.2;// color changes quicker
-            float geometryFrequency = 0.2;// color is wider
+            float geometryFrequency = 3.2;// color is wider
 
             float colorVelocity = 0.2;// color changes quicker
-            float colorFrequency = 0.05;// color is wider
+            float colorFrequency = 0.8;// color is wider
             float angle = abs(atan(vPosition.z, vPosition.x))/PI;
             float time = uTime+uAudioLevel;
 
@@ -263,7 +263,7 @@ void main(void) {
             }
 
             // POSITION
-            float displacementAmplitude = 0.5;
+            float displacementAmplitude = 0.1;
             float displacementFrequency = 0.1;
             float displacementVelocity = 2.0;
             vec4 displacement = displacementAmplitude * vec4(
