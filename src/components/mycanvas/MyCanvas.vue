@@ -97,7 +97,10 @@
                 <td><vue-slider v-model="waterTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
                 <td><input type="number" v-model="waterPeriod" style="width: 32px"></td>
             </tr>
-
+            <tr>
+                <td>Mic Amplification:</td>
+                <td><input type="number" v-model="micAmp" style="width: 32px"></td>
+            </tr>
         </table>
         <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
         <input id="file" ref="file" style="display: none" v-on:change="enableMusic" type="file" name="file" accept="audio/*">
@@ -174,6 +177,8 @@
                 softAudioLevel: 0,
                 timeShift: 0,
                 hidden: false,
+                micAmp: 1.0,
+
 
                 waterTransition: [80,100],
                 radialTransition: [80,100],
@@ -264,7 +269,6 @@
                 } else if (this.mousePitch > Math.PI * 0.5) {
                     this.mousePitch = Math.PI * 0.5;
                 }
-                console.log(this.mouseYaw, this.mousePitch);
             },
             handlePointerMove(event) {
                 if (event.buttons & 1) {
@@ -414,6 +418,9 @@
                 if(this.audioContext) {
                     if (this.analyser) {
                         this.analyser.getByteTimeDomainData(this.dataArray);
+                        for(let i=0; i < this.dataArray.length ; ++i){
+                            this.dataArray[i] *= this.micAmp;
+                        }
                         webGl.loadAudio(gl,audioTexture, this.fftSize, this.dataArray);
                         webGl.bindTexture(gl, programInfo.uniformLocations.audioSampler, 2, audioTexture);
                         this.audioLevel = 2.0*( webAudio.max(this.dataArray) / 255.0 - 0.5);
