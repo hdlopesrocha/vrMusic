@@ -107,6 +107,8 @@
 <script>
     /* eslint-disable no-unused-vars */
     const DEBUG = false;
+    const MOUSE_SPEED = 0.003;
+
     // 2D MODES
     const DRAW_MODE_2D_NORMAL= -9
     const DRAW_MODE_2D_WATER = -8
@@ -200,6 +202,9 @@
                 hexagonsPeriod:8,
                 pyramidsPeriod: 8,
                 neuralPeriod: 8,
+
+                mousePitch: 0,
+                mouseYaw: 0,
             }
         },
         methods: {
@@ -249,6 +254,22 @@
                     }.bind(this);
                 }
 
+            },
+            rotateViewBy(dx, dy) {
+                this.mouseYaw -= dx * MOUSE_SPEED;
+                this.mousePitch -= dy * MOUSE_SPEED;
+
+                if (this.mousePitch < -Math.PI * 0.5) {
+                    this.mousePitch = -Math.PI * 0.5;
+                } else if (this.mousePitch > Math.PI * 0.5) {
+                    this.mousePitch = Math.PI * 0.5;
+                }
+                console.log(this.mouseYaw, this.mousePitch);
+            },
+            handlePointerMove(event) {
+                if (event.buttons & 1) {
+                    this.rotateViewBy(event.movementX, event.movementY);
+                }
             }
         },
         mounted() {
@@ -258,6 +279,9 @@
             canvas.addEventListener("contextmenu", (event) => {
                 event.preventDefault();
             });
+            canvas.addEventListener("pointermove", this.handlePointerMove);
+
+
             window.addEventListener("resize", function() {
                 this.canvasWidth= window.innerWidth;
                 this.canvasHeight= window.innerHeight;
@@ -493,6 +517,9 @@
                     let up = glm.vec3.set(TEMP_UP, 0, 1, 0);
                     let eye = glm.vec3.set(TEMP_EYE, 0, 0, 0);
                     glm.mat4.lookAt(viewMatrix, eye, center, up);
+
+                    glm.mat4.rotateX(viewMatrix, viewMatrix, this.mousePitch);
+                    glm.mat4.rotateY(viewMatrix, viewMatrix, this.mouseYaw);
                 }
                 if (projectionMatrix == null) {
                     projectionMatrix = glm.mat4.identity(TEMP_PROJECTION);
