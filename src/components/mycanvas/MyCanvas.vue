@@ -3,7 +3,7 @@
         <table v-if="!hidden">
             <tr>
                 <td>Step 1:</td>
-                <td>
+                <td colspan="2">
                     <button v-on:click="pickFile" >File</button>
                     or
                     <button v-on:click="enableMic">Mic</button>
@@ -11,12 +11,14 @@
             </tr>
             <tr>
                 <td>Step 2:</td>
-                <td>
+                <td colspan="2">
                     <button v-on:click="enableVr" >Enter VR</button>
+                    or
+                    <button v-on:click="hideTable" >Hide</button>
                 </td>
             </tr>
             <tr>
-                <td colspan="2">
+                <td colspan="3">
                     Donate:
                     <ul>
                         <li>BTC: 37z5ap84nNA1VMrF8QNJ6XYVGrKn1GopKH</li>
@@ -25,10 +27,77 @@
                 </td>
             </tr>
             <tr>
-                <td colspan="2">
-                    <button v-on:click="hideTable" >Hide</button>
-                </td>
+                <td><b>Effect</b></td>
+                <td><b>Transition</b></td>
+                <td><b>Period</b></td>
             </tr>
+
+            <tr>
+                <td>Blur:</td>
+                <td><vue-slider v-model="blurTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="blurPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Cubes:</td>
+                <td><vue-slider v-model="cubesTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="cubesPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Cylinders:</td>
+                <td><vue-slider v-model="cylindersTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="cylindersPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Hexagons:</td>
+                <td><vue-slider v-model="hexagonsTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="hexagonsPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Mandala:</td>
+                <td><vue-slider v-model="mandalaTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="mandalaPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Model:</td>
+                <td><vue-slider v-model="modelTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="modelPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Neural:</td>
+                <td><vue-slider v-model="neuralTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="neuralPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Pyramids:</td>
+                <td><vue-slider v-model="pyramidsTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="pyramidsPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Radial:</td>
+                <td><vue-slider v-model="radialTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="radialPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>RGB:</td>
+                <td><vue-slider v-model="rgbTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="rgbPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Stars:</td>
+                <td><vue-slider v-model="starsTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="starsPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Torus:</td>
+                <td><vue-slider v-model="torusTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="torusPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Water:</td>
+                <td><vue-slider v-model="waterTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="waterPeriod" style="width: 32px"></td>
+            </tr>
+
         </table>
         <canvas v-bind:width="canvasWidth" v-bind:height="canvasHeight" id="glcanvas"></canvas>
         <input id="file" ref="file" style="display: none" v-on:change="enableMusic" type="file" name="file" accept="audio/*">
@@ -77,8 +146,15 @@
 
     import * as glm from 'gl-matrix'
     import GLTFLoader from 'three-gltf-loader';
+
+    import VueSlider from 'vue-slider-component'
+    import 'vue-slider-component/theme/default.css'
+
     export default {
         name: "VrMusic",
+        components: {
+            VueSlider
+        },
         data() {
             return {
                 canvasWidth: window.innerWidth,
@@ -96,6 +172,34 @@
                 softAudioLevel: 0,
                 timeShift: 0,
                 hidden: false,
+
+                waterTransition: [80,100],
+                radialTransition: [80,100],
+                rgbTransition: [60,80],
+                blurTransition: [30,60],
+                cubesTransition: [50,70],
+                modelTransition: [40,50],
+                mandalaTransition: [40,60],
+                torusTransition: [40,60],
+                starsTransition: [40,60],
+                cylindersTransition: [40,60],
+                hexagonsTransition: [50,70],
+                pyramidsTransition: [50,70],
+                neuralTransition: [50,70],
+
+                waterPeriod: 16,
+                radialPeriod: 16,
+                rgbPeriod: 16,
+                blurPeriod: 8,
+                cubesPeriod: 8,
+                modelPeriod: 8,
+                mandalaPeriod: 8,
+                torusPeriod: 8,
+                starsPeriod: 8,
+                cylindersPeriod: 8,
+                hexagonsPeriod:8,
+                pyramidsPeriod: 8,
+                neuralPeriod: 8,
             }
         },
         methods: {
@@ -354,28 +458,26 @@
                 gl.uniform3fv(programInfo.uniformLocations.lightDirection, lightDirection);
                 gl.uniform2f(programInfo.uniformLocations.canvasSize, viewport.width, viewport.height);
 
-                let transitionTime = 8.0;
-                let transitionTime2 = 16.0;
                 let angularVelocity = 0.5;
 
-                let blurAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, transitionTime),0.3 , 0.6);
+                let blurAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, this.blurPeriod),this.blurTransition[0]/100.0, this.blurTransition[1]/100.0);
 
-                let cylinderAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time, 0.0, transitionTime),0.4, 0.6);
-                let cubesAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time, transitionTime),0.5, 0.7);
+                let cylinderAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time, 0.0, this.cylindersPeriod),this.cylindersTransition[0]/100.0, this.cylindersTransition[1]/100.0);
+                let cubesAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time, this.cubesPeriod),this.cubesTransition[0]/100.0, this.cubesTransition[1]/100.0);
 
-                let torusAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time ,0.0, transitionTime),0.4, 0.6);
-                let mandalaAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0, state.time , transitionTime),0.4, 0.6);
-                let starsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time,  state.time , transitionTime),0.4, 0.6);
+                let torusAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time ,0.0, this.torusPeriod),this.torusTransition[0]/100.0, this.torusTransition[1]/100.0);
+                let mandalaAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0, state.time , this.mandalaPeriod),this.mandalaTransition[0]/100.0, this.mandalaTransition[1]/100.0);
+                let starsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time,  state.time , this.starsPeriod),this.starsTransition[0]/100.0, this.starsTransition[1]/100.0);
 
-                let modelAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time , transitionTime),0.4, 0.5);
+                let modelAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time , this.modelPeriod),this.modelTransition[0]/100.0, this.modelTransition[1]/100.0);
 
-                let rgbShiftAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, state.time,  state.time , transitionTime2), 0.6, 0.8 );
-                let waterAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, transitionTime2),0.6, 1.0);
-                let radialAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , transitionTime2),0.6 , 1.0);
+                let rgbShiftAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, state.time,  state.time , this.rgbPeriod), this.rgbTransition[0]/100.0, this.rgbTransition[1]/100.0 );
+                let waterAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, this.waterPeriod),this.waterTransition[0]/100.0, this.waterTransition[1]/100.0);
+                let radialAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , this.radialPeriod),this.radialTransition[0]/100.0, this.radialTransition[1]/100.0);
 
-                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, 0.0, 0.0, transitionTime),0.5, 0.7);
-                let hexaGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0,state.time+1024, 0.0, transitionTime),0.5, 0.7);
-                let pyramidsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, transitionTime),0.5, 0.7);
+                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, 0.0, 0.0, this.neuralPeriod),this.neuralTransition[0]/100.0, this.neuralTransition[1]/100.0);
+                let hexaGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0,state.time+1024, 0.0, this.hexagonsPeriod),this.hexagonsTransition[0]/100.0, this.hexagonsTransition[1]/100.0);
+                let pyramidsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, this.pyramidsPeriod),this.pyramidsTransition[0]/100.0, this.pyramidsTransition[1]/100.0);
 
                 if(DEBUG) {
                     rgbShiftAmount=0.0;
@@ -983,11 +1085,36 @@
         position: absolute;
         color: white;
         background: rgba(0,0,0,0.75);
+        padding: 4px;
     }
     button {
         padding: 10px;
     }
     li {
+        font-size: 10px;
+    }
+    td {
+        padding: 0px 4px;
+    }
+</style>
+
+<style>
+    .vue-slider-rail > .vue-slider-dot:nth-child(2) > div:first-child {
+        background: red !important;
+        text-align: center;
+        line-height: 10px;
+    }
+    .vue-slider-rail > .vue-slider-dot:nth-child(2) > div:first-child:after {
+        content: "O" !important;
+        font-size: 10px;
+    }
+    .vue-slider-rail > .vue-slider-dot:nth-child(3) > div:first-child {
+        background: green !important;
+        text-align: center;
+        line-height: 10px;
+    }
+    .vue-slider-rail > .vue-slider-dot:nth-child(3) > div:first-child:after {
+        content: "I" !important;
         font-size: 10px;
     }
 </style>

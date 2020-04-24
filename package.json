@@ -18,6 +18,7 @@
     "three": "^0.115.0",
     "three-gltf-loader": "^1.111.0",
     "vue": "^2.6.11",
+    "vue-slider-component": "^3.1.2",
     "webvr-polyfill": "^0.10.11",
     "webxr-polyfill": "^2.0.2"
   },
