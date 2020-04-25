@@ -14,6 +14,8 @@
                 <td colspan="2">
                     <button v-on:click="enableVr" >Enter VR</button>
                     or
+                    <button v-on:click="enableCubeMap" >Cube</button>
+                    or
                     <button v-on:click="hideTable" >Hide</button>
                 </td>
             </tr>
@@ -216,6 +218,9 @@
             enableVr() {
                 webGl.toggleVR(this.gl, this.state);
             },
+            enableCubeMap(){
+                webGl.toggleCubeMap(this.gl, this.state);
+            },
             enableMic() {
                 function handleSound(stream) {
                     this.audioContext = new AudioContext();
@@ -389,6 +394,7 @@
             let TEMP_SCALE = glm.vec3.create();
             let TEMP_DIRECTION = glm.vec3.create();
             let TEMP_VIEW = glm.mat4.create();
+            let TEMP_INV_VIEW = glm.mat4.create();
             let TEMP_MODEL = glm.mat4.create();
             let TEMP_PROJECTION = glm.mat4.create();
             let cameraPosition = glm.vec3.create();
@@ -460,7 +466,7 @@
 
 
             // eslint-disable-next-line no-unused-vars
-            function draw(gl, viewport, state, viewMatrix, projectionMatrix, mainFramebuffer, index) {
+            function draw(gl, viewport, state, viewMatrix, projectionMatrix, mainFramebuffer) {
                 // viewport for extra framebuffers (not for the main one)
                 gl.viewport(0, 0, viewport.width, viewport.height);
                 webGl.enableAttribs(gl, programInfo);
@@ -536,7 +542,7 @@
                 gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
 
                 {
-                    let invertedViewMatrix = glm.mat4.invert(TEMP_VIEW, viewMatrix);
+                    let invertedViewMatrix = glm.mat4.invert(TEMP_INV_VIEW, viewMatrix);
                     glm.vec3.set(cameraPosition, invertedViewMatrix[12], invertedViewMatrix[13], invertedViewMatrix[14]);
                     gl.uniform3fv(programInfo.uniformLocations.cameraPosition, cameraPosition);
                 }

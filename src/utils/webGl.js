@@ -2,6 +2,8 @@
 import WebXRPolyfill from "webxr-polyfill";
 import * as glm from "gl-matrix";
 
+const TEMP_EYE = glm.vec4.fromValues(0.0, 0.0, 0.0, 0.0);
+
 export default {
     TRANSPARENT: glm.vec4.fromValues(0.0, 0.0, 0.0, 0.0),
     WHITE: glm.vec4.fromValues(1.0, 1.0, 1.0, 1.0),
@@ -42,7 +44,7 @@ export default {
             time: 0,
             delta: 0,
             vrInitialized: false,
-            vrToggle: false,
+            viewMode: 0,
             vrSession: null,
             vrSpace: null,
             animation: null,
@@ -64,7 +66,7 @@ export default {
 
         // eslint-disable-next-line no-unused-vars
         function onSessionEnded(event) {
-
+            state.viewMode = 0;
         }
 
         function onSessionStarted(session) {
@@ -89,8 +91,7 @@ export default {
         }
 
         function render(now, frame) {
-            if (state.vrToggle) {
-                state.vrToggle = false;
+            if (state.viewMode === 1) {
                 if (!state.vrInitialized) {
                     state.vrInitialized = true;
                     new WebXRPolyfill();
@@ -106,7 +107,7 @@ export default {
             let pose = null;
             let session = null;
 
-            if (state.vrInitialized && frame) {
+            if (state.viewMode === 1 && state.vrInitialized && frame) {
                 session = frame.session;
                 state.animation = session.requestAnimationFrame(render);
                 if (state.vrSpace && frame) {
@@ -119,7 +120,7 @@ export default {
             state.tick(now);
             state.updateCallback(gl, state);
 
-            if (state.vrInitialized && frame) {
+            if (state.viewMode === 1 && state.vrInitialized && frame) {
                 if (pose) {
                     let layer = session ? session.renderState.baseLayer : null;
                     state.cleanDrawback(gl, layer.framebuffer, that.TRANSPARENT);
@@ -127,10 +128,83 @@ export default {
                         let view = pose.views[i];
                         let viewport = layer.getViewport(view);
                         if(viewport.width > 0 && viewport.height>0){
-                            state.drawCallback(gl, viewport, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer, i + 1);
+                            state.drawCallback(gl, viewport, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer);
                         }
                     }
                 }
+            } else if (state.viewMode === 2) {
+                state.cleanDrawback(gl, null, that.TRANSPARENT)
+
+                // TODO: drawCubeMap
+                let viewMatrix = glm.mat4.create();
+                let projectionMatrix = glm.mat4.create();
+                let eye = glm.vec3.set(TEMP_EYE, 0, 0, 0);
+                let w = Math.ceil(gl.canvas.width/3);
+                let h = Math.ceil(gl.canvas.height/2);
+
+                projectionMatrix = glm.mat4.perspective(projectionMatrix, 90 * Math.PI / 180, 1.0, 0.1, 1000.0);
+
+
+                const parameters = [
+                    {
+                        center: glm.vec3.fromValues(-1, 0, 0),
+                        up: glm.vec3.fromValues(0, 1, 0),
+                        x: 0*w,
+                        y: 1*h,
+                    },
+                    {
+                        center: glm.vec3.fromValues(0, 0, -1),
+                        up: glm.vec3.fromValues(0, 1, 0),
+                        x: 1*w,
+                        y: 1*h,
+                    },
+                    {
+                        center: glm.vec3.fromValues(1, 0, 0),
+                        up: glm.vec3.fromValues(0, 1, 0),
+                        x: 2*w,
+                        y: 1*h,
+                    },
+                    {
+                        center: glm.vec3.fromValues(0, -1, 0),
+                        up: glm.vec3.fromValues(1, 0, 0),
+                        x: 0*w,
+                        y: 0*h,
+                    },
+                    {
+                        center: glm.vec3.fromValues(0, 0, 1),
+                        up: glm.vec3.fromValues(1, 0, 0),
+                        x: 1*w,
+                        y: 0*h,
+                    },
+                    {
+                        center: glm.vec3.fromValues(0, 1, 0),
+                        up: glm.vec3.fromValues(1, 0, 0),
+                        x: 2*w,
+                        y: 0*h,
+                    }
+
+                ];
+
+
+                for(let p of parameters){
+                    viewMatrix = glm.mat4.lookAt(viewMatrix, eye, p.center, p.up);
+                    let viewport = {
+                        width: w,
+                        height: h,
+                        x: p.x,
+                        y: p.y,
+                    }
+                    if (viewport.width && viewport.height) {
+                        try {
+                            state.drawCallback(gl, viewport, state, viewMatrix, projectionMatrix, null);
+                        }
+                        catch (e) {
+                            // do nothing
+                        }
+                    }
+                }
+
+
             } else {
                 let viewport = {
                     width: gl.canvas.width,
@@ -140,7 +214,7 @@ export default {
                 }
                 if (viewport.width && viewport.height) {
                     state.cleanDrawback(gl, null, that.TRANSPARENT)
-                    state.drawCallback(gl, viewport, state, null, null, null, 0);
+                    state.drawCallback(gl, viewport, state, null, null, null);
                 }
             }
         }
@@ -328,9 +402,6 @@ export default {
 
         gl.drawElements(mode, mesh.ic, gl.UNSIGNED_SHORT, 0);
     },
-    enableVr: function (state) {
-        state.vrInit = true;
-    },
     isPowerOf2: function (value) {
         return (value & (value - 1)) === 0;
     },
@@ -460,7 +531,7 @@ export default {
         return gl.getFramebufferAttachmentParameter(gl.READ_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
     },
     toggleVR(gl, state) {
-        state.vrToggle = true;
+        state.viewMode = 1;
     },
     copyBuffer(gl, src, dest) {
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, dest.frame);
@@ -469,5 +540,8 @@ export default {
 
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+    },
+    toggleCubeMap(gl, state) {
+        state.viewMode = 2;
     }
 }
