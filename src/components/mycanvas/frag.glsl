@@ -105,7 +105,7 @@ void main(void) {
         p2c*= p2c;
         p2c*= p2c;
 
-        color = texture(uSampler[0], textureCoordinates+normal.xy*p2c*uEffectAmount);
+        color = texture(uSampler[0], clamp(textureCoordinates+normal.xy*p2c*uEffectAmount, 0.0, 1.0));
         color.xyz += p2c*uEffectAmount*0.5;
         skipEffect = true;
     } else if(uDrawMode == DRAW_MODE_2D_NORMAL){
@@ -125,9 +125,9 @@ void main(void) {
         float pixelShift = 8.0;
         vec2 shift = uEffectAmount*pixelShift/uCanvasSize;
 
-        vec4 t1 = texture(uSampler[0], textureCoordinates+shift*vec2(-0.5,-0.5));
-        vec4 t2 = texture(uSampler[0], textureCoordinates+shift*vec2(1.0, 0.0));
-        vec4 t3 = texture(uSampler[0], textureCoordinates+shift*vec2(0.0, 1.0));
+        vec4 t1 = texture(uSampler[0], clamp(textureCoordinates+shift*vec2(-0.5,-0.5), 0.0, 1.0));
+        vec4 t2 = texture(uSampler[0], clamp(textureCoordinates+shift*vec2(1.0, 0.0), 0.0, 1.0));
+        vec4 t3 = texture(uSampler[0], clamp(textureCoordinates+shift*vec2(0.0, 1.0), 0.0, 1.0));
 
         color.xyz = vec3(t1.x, t2.y, t3.z);
         color.w = 1.0;
@@ -139,7 +139,7 @@ void main(void) {
         p2c*= p2c;
         p2c*= p2c;
 
-        color.xyz = texture(uSampler[0], textureCoordinates+dist*p2c*uEffectAmount).xyz;
+        color.xyz = texture(uSampler[0], clamp(textureCoordinates+dist*p2c*uEffectAmount, 0.0, 1.0)).xyz;
         color.w = 1.0;
         skipEffect = true;
     } else if(uDrawMode == DRAW_MODE_2D_RADIAL){
@@ -157,7 +157,7 @@ void main(void) {
         int iters = clamp(int( float(maxIters)*p2c*uEffectAmount ), 1, maxIters);
         vec4 sum = vec4(0.0);
         for(int i=0; i < iters; ++i){
-            sum += texture(uSampler[0], textureCoordinates+norm*delta*float(i));
+            sum += texture(uSampler[0], clamp(textureCoordinates+norm*delta*float(i), 0.0, 1.0 ));
         }
         sum /= float(iters);
         color = sum;

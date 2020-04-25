@@ -988,73 +988,73 @@
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES, hexaSphereTexture);
                     }
                 }
-                if(extraEffectsEnabled){
-                    // ***********
-                    // DRAW RADIAL
-                    // ***********
-                    if(radialAmount){
-                        // common
-                        gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                        gl.disable(gl.DEPTH_TEST);
-                        gl.disable(gl.CULL_FACE);
-                        let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                        gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
-                        // 1st pass
-                        webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+                // ***********
+                // DRAW RADIAL
+                // ***********
+                if(radialAmount && extraEffectsEnabled){
+                    // common
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
-                        // 2nd pass
-                        gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
-                        gl.uniform1f(programInfo.uniformLocations.effectAmount, radialAmount);
-                        gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_RADIAL);
-                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
-                    }
+                    // 1st pass
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
 
-                    // **********
-                    // DRAW WATER
-                    // **********
-                    if(waterAmount){
-                        // common
-                        gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                        gl.disable(gl.DEPTH_TEST);
-                        gl.disable(gl.CULL_FACE);
-                        let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                        gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-
-                        // 1st pass
-                        webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
-
-                        // 2nd pass
-                        gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
-                        gl.uniform1f(programInfo.uniformLocations.effectAmount, waterAmount);
-                        gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_WATER);
-                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
-                    }
-
-                    // **********
-                    // DRAW SHIFT
-                    // **********
-                    if(rgbShiftAmount){
-                        // common
-                        gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                        gl.disable(gl.DEPTH_TEST);
-                        gl.disable(gl.CULL_FACE);
-                        let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                        gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-
-                        // 1st pass
-                        webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
-
-                        // 2nd pass
-                        gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
-                        gl.uniform1f(programInfo.uniformLocations.effectAmount, rgbShiftAmount);
-                        gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_SHIFT);
-                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
-                    }
+                    // 2nd pass
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, radialAmount);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_RADIAL);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
                 }
+
+                // **********
+                // DRAW WATER
+                // **********
+                if(waterAmount && extraEffectsEnabled){
+                    // common
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+
+                    // 1st pass
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+
+                    // 2nd pass
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, waterAmount);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_WATER);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
+                }
+
+                // **********
+                // DRAW SHIFT
+                // **********
+                if(rgbShiftAmount && extraEffectsEnabled){
+                    // common
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+
+                    // 1st pass
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+
+                    // 2nd pass
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, rgbShiftAmount);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_SHIFT);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
+                }
+
                 // ****************
                 // DRAW FRAMEBUFFER
                 // ****************
