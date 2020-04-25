@@ -128,7 +128,7 @@ export default {
                         let view = pose.views[i];
                         let viewport = layer.getViewport(view);
                         if(viewport.width > 0 && viewport.height>0){
-                            state.drawCallback(gl, viewport, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer);
+                            state.drawCallback(gl, viewport, state, view.transform.inverse.matrix, view.projectionMatrix, layer.framebuffer, true);
                         }
                     }
                 }
@@ -195,12 +195,7 @@ export default {
                         y: p.y,
                     }
                     if (viewport.width && viewport.height) {
-                        try {
-                            state.drawCallback(gl, viewport, state, viewMatrix, projectionMatrix, null);
-                        }
-                        catch (e) {
-                            // do nothing
-                        }
+                        state.drawCallback(gl, viewport, state, viewMatrix, projectionMatrix, null, false);
                     }
                 }
 
@@ -214,7 +209,7 @@ export default {
                 }
                 if (viewport.width && viewport.height) {
                     state.cleanDrawback(gl, null, that.TRANSPARENT)
-                    state.drawCallback(gl, viewport, state, null, null, null);
+                    state.drawCallback(gl, viewport, state, null, null, null, true);
                 }
             }
         }

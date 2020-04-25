@@ -466,7 +466,7 @@
 
 
             // eslint-disable-next-line no-unused-vars
-            function draw(gl, viewport, state, viewMatrix, projectionMatrix, mainFramebuffer) {
+            function draw(gl, viewport, state, viewMatrix, projectionMatrix, mainFramebuffer, extraEffectsEnabled) {
                 // viewport for extra framebuffers (not for the main one)
                 gl.viewport(0, 0, viewport.width, viewport.height);
                 webGl.enableAttribs(gl, programInfo);
@@ -988,73 +988,73 @@
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES, hexaSphereTexture);
                     }
                 }
-                
-                // ***********
-                // DRAW RADIAL
-                // ***********
-                if(radialAmount){
-                    // common
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                if(extraEffectsEnabled){
+                    // ***********
+                    // DRAW RADIAL
+                    // ***********
+                    if(radialAmount){
+                        // common
+                        gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                        gl.disable(gl.DEPTH_TEST);
+                        gl.disable(gl.CULL_FACE);
+                        let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                        gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
 
-                    // 1st pass
-                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+                        // 1st pass
+                        webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
 
-                    // 2nd pass
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, radialAmount);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_RADIAL);
-                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
+                        // 2nd pass
+                        gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                        gl.uniform1f(programInfo.uniformLocations.effectAmount, radialAmount);
+                        gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_RADIAL);
+                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
+                    }
+
+                    // **********
+                    // DRAW WATER
+                    // **********
+                    if(waterAmount){
+                        // common
+                        gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                        gl.disable(gl.DEPTH_TEST);
+                        gl.disable(gl.CULL_FACE);
+                        let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                        gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+
+                        // 1st pass
+                        webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+
+                        // 2nd pass
+                        gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                        gl.uniform1f(programInfo.uniformLocations.effectAmount, waterAmount);
+                        gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_WATER);
+                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
+                    }
+
+                    // **********
+                    // DRAW SHIFT
+                    // **********
+                    if(rgbShiftAmount){
+                        // common
+                        gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                        gl.disable(gl.DEPTH_TEST);
+                        gl.disable(gl.CULL_FACE);
+                        let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                        gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+
+                        // 1st pass
+                        webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+
+                        // 2nd pass
+                        gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                        gl.uniform1f(programInfo.uniformLocations.effectAmount, rgbShiftAmount);
+                        gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_SHIFT);
+                        webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
+                    }
                 }
-
-                // **********
-                // DRAW WATER
-                // **********
-                if(waterAmount){
-                    // common
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-
-                    // 1st pass
-                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
-
-                    // 2nd pass
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, waterAmount);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_WATER);
-                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
-                }
-
-                // **********
-                // DRAW SHIFT
-                // **********
-                if(rgbShiftAmount){
-                    // common
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-
-                    // 1st pass
-                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
-
-                    // 2nd pass
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, rgbShiftAmount);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_SHIFT);
-                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
-                }
-
                 // ****************
                 // DRAW FRAMEBUFFER
                 // ****************
