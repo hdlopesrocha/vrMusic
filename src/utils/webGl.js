@@ -233,6 +233,8 @@ export default {
                 sampler: [
                     gl.getUniformLocation(shaderProgram, 'uSampler[0]'),
                     gl.getUniformLocation(shaderProgram, 'uSampler[1]'),
+                    gl.getUniformLocation(shaderProgram, 'uSampler[2]'),
+                    gl.getUniformLocation(shaderProgram, 'uSampler[3]'),
                 ],
                 enableLight: gl.getUniformLocation(shaderProgram, 'uEnableLight'),
                 drawMode: gl.getUniformLocation(shaderProgram, 'uDrawMode'),
@@ -365,7 +367,7 @@ export default {
         gl.activeTexture(gl.TEXTURE0 + position);
         gl.bindTexture(gl.TEXTURE_2D, texture);
     },
-    drawMesh: function (gl, programInfo, mesh, mode, image0, image1) {
+    drawMesh: function (gl, programInfo, mesh, mode, image0, image1, image2, image3) {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vb);
         gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
@@ -394,7 +396,12 @@ export default {
         if (image1) {
             this.bindTexture(gl, programInfo.uniformLocations.sampler[1], 1, image1);
         }
-
+        if (image2) {
+            this.bindTexture(gl, programInfo.uniformLocations.sampler[2], 2, image2);
+        }
+        if (image3) {
+            this.bindTexture(gl, programInfo.uniformLocations.sampler[3], 3, image3);
+        }
         gl.drawElements(mode, mesh.ic, gl.UNSIGNED_SHORT, 0);
     },
     isPowerOf2: function (value) {

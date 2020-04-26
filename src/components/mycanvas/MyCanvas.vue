@@ -33,7 +33,9 @@
                 <td><b>Transition</b></td>
                 <td><b>Period</b></td>
             </tr>
-
+            <tr>
+                <td><small>3D</small></td>
+            </tr>
             <tr>
                 <td>Blur:</td>
                 <td><vue-slider v-model="blurTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
@@ -75,16 +77,6 @@
                 <td><input type="number" v-model="pyramidsPeriod" style="width: 32px"></td>
             </tr>
             <tr>
-                <td>Radial:</td>
-                <td><vue-slider v-model="radialTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="radialPeriod" style="width: 32px"></td>
-            </tr>
-            <tr>
-                <td>RGB:</td>
-                <td><vue-slider v-model="rgbTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="rgbPeriod" style="width: 32px"></td>
-            </tr>
-            <tr>
                 <td>Stars:</td>
                 <td><vue-slider v-model="starsTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
                 <td><input type="number" v-model="starsPeriod" style="width: 32px"></td>
@@ -93,6 +85,24 @@
                 <td>Torus:</td>
                 <td><vue-slider v-model="torusTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
                 <td><input type="number" v-model="torusPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td><small>2D</small></td>
+            </tr>
+            <tr>
+                <td>Filter:</td>
+                <td><vue-slider v-model="filterTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="filterPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>Radial:</td>
+                <td><vue-slider v-model="radialTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="radialPeriod" style="width: 32px"></td>
+            </tr>
+            <tr>
+                <td>RGB:</td>
+                <td><vue-slider v-model="rgbTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="rgbPeriod" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Water:</td>
@@ -115,6 +125,7 @@
     const MOUSE_SPEED = 0.003;
 
     // 2D MODES
+    const DRAW_MODE_2D_FILTER = -10
     const DRAW_MODE_2D_NORMAL= -9
     const DRAW_MODE_2D_WATER = -8
     const DRAW_MODE_2D_SHIFT = -7
@@ -195,6 +206,7 @@
                 hexagonsTransition: [50,70],
                 pyramidsTransition: [50,70],
                 neuralTransition: [50,70],
+                filterTransition: [50,70],
 
                 waterPeriod: 16,
                 radialPeriod: 16,
@@ -209,6 +221,7 @@
                 hexagonsPeriod:8,
                 pyramidsPeriod: 8,
                 neuralPeriod: 8,
+                filterPeriod: 8,
 
                 mousePitch: 0,
                 mouseYaw: 0,
@@ -285,9 +298,11 @@
             const canvas = document.querySelector('#glcanvas');
             const gl = canvas.getContext('webgl2', {xrCompatible: true});
             this.gl = gl;
-            canvas.addEventListener("contextmenu", (event) => {
-                event.preventDefault();
-            });
+            if(!DEBUG) {
+                canvas.addEventListener("contextmenu", (event) => {
+                    event.preventDefault();
+                });
+            }
             canvas.addEventListener("pointermove", this.handlePointerMove);
 
 
@@ -331,6 +346,8 @@
             let mandalaMaskTexture = webGl.loadTexture(gl, "textures/mandala_mask.png");
             let hexaSphereTexture = webGl.loadTexture(gl, "textures/hexa_texture.png");
             let hexaMaskTexture = webGl.loadTexture(gl, "textures/hexa_mask.png");
+            let filterNormalTexture = webGl.loadTexture(gl, "textures/filter_normal.jpg");
+            let filterBumpTexture = webGl.loadTexture(gl, "textures/filter_bump.jpg");
             let billboardMesh = webGl.createBillboard(gl);
 
             // **********************
@@ -393,6 +410,7 @@
             let TEMP_POSITION = glm.vec3.create();
             let TEMP_SCALE = glm.vec3.create();
             let TEMP_DIRECTION = glm.vec3.create();
+            // eslint-disable-next-line no-unused-vars
             let TEMP_VIEW = glm.mat4.create();
             let TEMP_INV_VIEW = glm.mat4.create();
             let TEMP_MODEL = glm.mat4.create();
@@ -516,11 +534,14 @@
                 let hexaGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0,state.time+1024, 0.0, this.hexagonsPeriod),this.hexagonsTransition[0]/100.0, this.hexagonsTransition[1]/100.0);
                 let pyramidsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, this.pyramidsPeriod),this.pyramidsTransition[0]/100.0, this.pyramidsTransition[1]/100.0);
 
+                let filterAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+2048, this.filterPeriod),this.filterTransition[0]/100.0, this.filterTransition[1]/100.0);
+
                 if(DEBUG) {
                     rgbShiftAmount=0.0;
                     waterAmount =0.0;
                     radialAmount =0.0;
-                    hexaGridAmount = 1.0;
+                }else {
+                    filterAmount = 0.0;
                 }
 
                 let variant = 0;
@@ -1032,6 +1053,29 @@
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_WATER);
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture);
                 }
+
+                // ***********
+                // DRAW FILTER
+                // ***********
+                if(extraEffectsEnabled){
+                    // common
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.CULL_FACE);
+                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
+                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
+                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+
+                    // 1st pass
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+
+                    // 2nd pass
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, filterAmount);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_FILTER);
+                    webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture, filterNormalTexture, filterBumpTexture);
+                }
+
 
                 // **********
                 // DRAW SHIFT

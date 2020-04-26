@@ -3,9 +3,8 @@ precision highp float;
 precision highp int;
 
 uniform int uDrawMode;
-uniform sampler2D uSampler[2];
+uniform sampler2D uSampler[4];
 uniform sampler2D uAudioSampler;
-uniform float uEffectAmount;
 
 uniform bool uEnableLight;
 uniform float uTime;
@@ -15,6 +14,7 @@ uniform float uAudioLevel;
 uniform vec3 uLightDirection;
 uniform vec3 uCameraPosition;
 uniform vec2 uCanvasSize;
+uniform float uEffectAmount;
 
 in vec3 vNormal;
 in vec2 vTextureCoordinates;
@@ -140,6 +140,22 @@ void main(void) {
         p2c*= p2c;
 
         color.xyz = texture(uSampler[0], clamp(textureCoordinates+dist*p2c*uEffectAmount, 0.0, 1.0)).xyz;
+        color.w = 1.0;
+        skipEffect = true;
+    } else if(uDrawMode == DRAW_MODE_2D_FILTER){
+        vec3 filterNormal = 2.0*(texture(uSampler[1], textureCoordinates).xyz-vec3(0.5));
+        vec3 filterBump = texture(uSampler[2], textureCoordinates).xyz;
+        vec2 delta = 128.0/uCanvasSize;
+
+        vec3 up = normalize(vec3(0.0,0.0,1.0));
+
+        vec3 tex = texture(uSampler[0], textureCoordinates+filterNormal.xy*delta*filterBump.x*uEffectAmount).xyz;
+
+        float diffuseFactor = dot(normalize(filterNormal),up)*uEffectAmount;
+
+        tex.rgb += (1.0-diffuseFactor)*0.3*uEffectAmount;
+
+        color.xyz = tex;
         color.w = 1.0;
         skipEffect = true;
     } else if(uDrawMode == DRAW_MODE_2D_RADIAL){
