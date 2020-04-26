@@ -68,6 +68,7 @@ vec3 getNormalAtTexture(vec2 pos) {
 }
 
 void main(void) {
+    vec4 ambientLight = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
     vec2 textureCoordinates = vTextureCoordinates;
     bool skipEffect = false;
@@ -94,8 +95,10 @@ void main(void) {
         return;
     } else if (uDrawMode == DRAW_MODE_3D_TORUS) {
         color = vColor;
+        color.w *= uEffectAmount;
     } else if (uDrawMode == DRAW_MODE_3D_EDGES) {
         color = texture(uSampler[0], textureCoordinates);
+        color.w *= uEffectAmount;
     } else if(uDrawMode == DRAW_MODE_2D_WATER){
         vec3 normal = getNormalAtPosition(textureCoordinates, 48.0)-0.5;
 
@@ -107,7 +110,6 @@ void main(void) {
 
         color = texture(uSampler[0], clamp(textureCoordinates+normal.xy*p2c*uEffectAmount, 0.0, 1.0));
         color.xyz += p2c*uEffectAmount*0.5;
-        skipEffect = true;
     } else if(uDrawMode == DRAW_MODE_2D_NORMAL){
         vec3 normal = getNormalAtTexture(textureCoordinates);
         vec2 delta = 32.0/uCanvasSize;
@@ -119,8 +121,6 @@ void main(void) {
         color = texture(uSampler[0], textureCoordinates+normal.xy*delta*uEffectAmount*superficialRefraction);
 
         //color = texture(uSampler[1], textureCoordinates);
-
-        skipEffect = true;
     } else if(uDrawMode == DRAW_MODE_2D_SHIFT){
         float pixelShift = 8.0;
         vec2 shift = uEffectAmount*pixelShift/uCanvasSize;
@@ -131,7 +131,6 @@ void main(void) {
 
         color.xyz = vec3(t1.x, t2.y, t3.z);
         color.w = 1.0;
-        skipEffect = true;
     } else if(uDrawMode == DRAW_MODE_2D_LENS){
         vec2 dist = (vec2(0.5)-textureCoordinates);
         float len = length(dist);
@@ -141,7 +140,6 @@ void main(void) {
 
         color.xyz = texture(uSampler[0], clamp(textureCoordinates+dist*p2c*uEffectAmount, 0.0, 1.0)).xyz;
         color.w = 1.0;
-        skipEffect = true;
     } else if(uDrawMode == DRAW_MODE_2D_FILTER){
         vec3 filterNormal = 2.0*(texture(uSampler[1], textureCoordinates).xyz-vec3(0.5));
         vec3 filterBump = texture(uSampler[2], textureCoordinates).xyz;
@@ -157,7 +155,6 @@ void main(void) {
 
         color.xyz = tex;
         color.w = 1.0;
-        skipEffect = true;
     } else if(uDrawMode == DRAW_MODE_2D_RADIAL){
         vec2 delta = 4.0/uCanvasSize;
 
@@ -177,20 +174,28 @@ void main(void) {
         }
         sum /= float(iters);
         color = sum;
-        skipEffect = true;
     } else if (uDrawMode == DRAW_MODE_3D_SPHERICAL_GRID) {
         if(vColor.w < 0.95){
             color = vec4(0.0);
         }else {
             color = texture(uSampler[0], textureCoordinates)*vColor;
         }
+        color.w *= uEffectAmount;
+
     } else if (uDrawMode == DRAW_MODE_3D_HEXA_GRID) {
         if(vColor.w < 0.95){
             color = vec4(0.0);
         }else {
             color = texture(uSampler[0], textureCoordinates)*vColor;
         }
-    } else {
+        color.w *= uEffectAmount;
+    } else if(uDrawMode == DRAW_MODE_3D_CYLINDER){
+        color = texture(uSampler[0], textureCoordinates)*vColor;
+        color.w *= uEffectAmount;
+    } else if(uDrawMode == DRAW_MODE_3D_MODEL) {
+        color.xyz *= 0.15;
+        ambientLight = vec4(0.2, 0.2, 0.2, 0.0);
+    }else {
         color = texture(uSampler[0], textureCoordinates)*vColor;
     }
 
@@ -198,11 +203,11 @@ void main(void) {
     if (uEnableLight) {
         float dotFactor = dot(normal, -uLightDirection);
         color = color*vec4(dotFactor, dotFactor, dotFactor, 1.0);
+        color += ambientLight;
     }
 
-    if (uDrawMode == DRAW_MODE_2D_MIX){
-        color *= 0.5;
-        color.xyz += 0.3;
+    if (uDrawMode == DRAW_MODE_2D_MIX || uDrawMode == DRAW_MODE_3D_PYRAMID || uDrawMode == DRAW_MODE_3D_CUBE){
+        color.w *= uEffectAmount;
     }
     else if (uDrawMode == DRAW_MODE_3D_NO_EDGES_MASK || uDrawMode == DRAW_MODE_3D_EDGES) {
         vec3 vertexToCam = normalize(vPosition.xyz-uCameraPosition);
@@ -213,14 +218,14 @@ void main(void) {
         }else {
             color = edgeDot < edgeFactor ? vec4(0.0) : vec4(1.0);
         }
-    }
-
-    if (uDrawMode == DRAW_MODE_3D_SKY || uDrawMode == DRAW_MODE_3D_BILLBOARD || uDrawMode == DRAW_MODE_3D_MANDALA) {
+        color.w *= uEffectAmount;
+    } else if (uDrawMode == DRAW_MODE_3D_BILLBOARD || uDrawMode == DRAW_MODE_3D_MANDALA) {
+        color.xyz *= vColor.xyz;
+        color.w *= uEffectAmount;
+    } else if (uDrawMode == DRAW_MODE_3D_SKY) {
         color.xyz *= vColor.xyz;
     }
-    if(!skipEffect) {
-        color.w *= uEffectAmount;
-    }
+
     fragColor = alphaBlend(color);
 
 }

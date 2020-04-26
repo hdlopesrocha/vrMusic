@@ -3,6 +3,7 @@ import WebXRPolyfill from "webxr-polyfill";
 import * as glm from "gl-matrix";
 
 const TEMP_EYE = glm.vec4.fromValues(0.0, 0.0, 0.0, 0.0);
+const TEMP_IDENTITY = glm.mat4.create();
 
 export default {
     TRANSPARENT: glm.vec4.fromValues(0.0, 0.0, 0.0, 0.0),
@@ -542,6 +543,13 @@ export default {
 
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+    },
+    prepareFor2D(gl, programInfo){
+        // common
+        gl.disable(gl.DEPTH_TEST);
+        gl.disable(gl.CULL_FACE);
+        gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, TEMP_IDENTITY);
+        gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
     },
     toggleCubeMap(gl, state) {
         state.viewMode = 2;

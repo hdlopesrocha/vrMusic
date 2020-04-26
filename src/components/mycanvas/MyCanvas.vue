@@ -149,6 +149,7 @@
     const DRAW_MODE_3D_SPHERICAL_GRID = 9
     const DRAW_MODE_3D_HEXA_GRID = 10
     const DRAW_MODE_3D_PYRAMID = 11
+    const DRAW_MODE_3D_MODEL = 12
     /* eslint-enable no-unused-vars */
 
 
@@ -206,7 +207,7 @@
                 hexagonsTransition: [50,70],
                 pyramidsTransition: [50,70],
                 neuralTransition: [50,70],
-                filterTransition: [50,70],
+                filterTransition: [100,100],
 
                 waterPeriod: 16,
                 radialPeriod: 16,
@@ -540,8 +541,6 @@
                     rgbShiftAmount=0.0;
                     waterAmount =0.0;
                     radialAmount =0.0;
-                }else {
-                    filterAmount = 0.0;
                 }
 
                 let variant = 0;
@@ -574,7 +573,6 @@
                 // **********
                 if(spaceModel) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
 
                     glm.mat4.scale(modelMatrix, modelMatrix, glm.vec3.set(TEMP_SCALE, 400, 400, 400));
@@ -803,7 +801,6 @@
 
                 if(mandalaModel && blurAmount) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, maskFrameBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     let modelMatrix = glm.mat4.identity(TEMP_MODEL);
                     let position = glm.vec3.set(TEMP_POSITION, 0, -2.2, 0);
                     let scale = glm.vec3.set(TEMP_SCALE, 8, 8, 8);
@@ -879,15 +876,10 @@
                 // *********
                 if(blurAmount){
                     // common
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    webGl.prepareFor2D(gl, programInfo);
 
                     // 1st pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, temporaryBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture);
 
@@ -915,8 +907,7 @@
 
                     // 1st pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, alphaFrameBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_DEFAULT);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_MODEL);
                     for (let mesh of statueModel) {
                         webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
                     }
@@ -928,11 +919,7 @@
                 // ****************
                 if(modelAmount){
                     // common
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
+                    webGl.prepareFor2D(gl, programInfo);
 
                     // 1st pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
@@ -970,19 +957,11 @@
                 // ***********
                 if(hexaGridAmount){
                     // common
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-
-                    // 1st pass
                     webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+                    webGl.prepareFor2D(gl, programInfo);
 
                     // 2nd pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_NORMAL);
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, temporaryBuffer.texture, normalMaskFrameBuffer.texture);
                 }
@@ -1015,17 +994,10 @@
                 // ***********
                 if(radialAmount && extraEffectsEnabled){
                     // common
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+                    webGl.prepareFor2D(gl, programInfo);
 
                     // 1st pass
-                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
-
-                    // 2nd pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, radialAmount);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_RADIAL);
@@ -1037,17 +1009,10 @@
                 // **********
                 if(waterAmount && extraEffectsEnabled){
                     // common
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+                    webGl.prepareFor2D(gl, programInfo);
 
                     // 1st pass
-                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
-
-                    // 2nd pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, waterAmount);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_WATER);
@@ -1059,17 +1024,10 @@
                 // ***********
                 if(extraEffectsEnabled){
                     // common
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+                    webGl.prepareFor2D(gl, programInfo);
 
                     // 1st pass
-                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
-
-                    // 2nd pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, filterAmount);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_FILTER);
@@ -1082,17 +1040,10 @@
                 // **********
                 if(rgbShiftAmount && extraEffectsEnabled){
                     // common
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
+                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
+                    webGl.prepareFor2D(gl, programInfo);
 
                     // 1st pass
-                    webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
-
-                    // 2nd pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, drawFrameBuffer.frame);
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, rgbShiftAmount);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D_SHIFT);
@@ -1105,15 +1056,10 @@
                 {
                     // common
                     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-                    let modelMatrix = glm.mat4.identity(TEMP_MODEL);
-                    gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.disable(gl.DEPTH_TEST);
-                    gl.disable(gl.CULL_FACE);
+                    webGl.prepareFor2D(gl, programInfo);
 
                     // 1st pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, mainFramebuffer);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     webGl.drawMesh(gl, programInfo, billboardMesh, gl.TRIANGLES, drawFrameBuffer.texture);
                 }
@@ -1123,7 +1069,6 @@
                 // *****
                 if(DEBUG && billboardMesh){
                     gl.bindFramebuffer(gl.FRAMEBUFFER, mainFramebuffer);
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, 1.0);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_2D);
                     gl.enable(gl.DEPTH_TEST);
