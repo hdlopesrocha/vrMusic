@@ -108,8 +108,12 @@ void main(void) {
         p2c*= p2c;
         p2c*= p2c;
 
+        vec3 lightDirection = normalize(vec3(1.0,1.0,1.0));
+        float diffuseFactor = dot(normalize(normal),lightDirection)*uEffectAmount;
+
         color = texture(uSampler[0], clamp(textureCoordinates+normal.xy*p2c*uEffectAmount, 0.0, 1.0));
-        color.xyz += p2c*uEffectAmount*0.5;
+        color.rgb += (1.0-diffuseFactor)*uEffectAmount*p2c;
+
     } else if(uDrawMode == DRAW_MODE_2D_NORMAL){
         vec3 normal = getNormalAtTexture(textureCoordinates);
         vec2 delta = 32.0/uCanvasSize;
@@ -141,17 +145,24 @@ void main(void) {
         color.xyz = texture(uSampler[0], clamp(textureCoordinates+dist*p2c*uEffectAmount, 0.0, 1.0)).xyz;
         color.w = 1.0;
     } else if(uDrawMode == DRAW_MODE_2D_FILTER){
-        vec3 filterNormal = 2.0*(texture(uSampler[1], textureCoordinates).xyz-vec3(0.5));
-        vec3 filterBump = texture(uSampler[2], textureCoordinates).xyz;
+        vec2 dist = (vec2(0.5)-textureCoordinates);
+        vec2 norm = normalize(dist);
+        float len = length(dist);
+        float p2c = 2.0*len / sqrt(2.0);
+        p2c*= p2c;
+
+        float filterSize = 2.0;
+        vec3 filterNormal = 2.0*(texture(uSampler[1], textureCoordinates*filterSize).xyz-vec3(0.5));
+        vec3 filterBump = texture(uSampler[2], textureCoordinates*filterSize).xyz;
+        float bumpHeight = 16.0;
+        vec3 bump = filterBump*bumpHeight*p2c;
+
         vec2 delta = 128.0/uCanvasSize;
+        vec3 lightDirection = normalize(vec3(1.0,1.0,1.0));
+        vec3 tex = texture(uSampler[0], textureCoordinates+filterNormal.xy*delta*bump.x*uEffectAmount).xyz;
+        float diffuseFactor = dot(normalize(filterNormal),lightDirection)*uEffectAmount;
 
-        vec3 up = normalize(vec3(0.0,0.0,1.0));
-
-        vec3 tex = texture(uSampler[0], textureCoordinates+filterNormal.xy*delta*filterBump.x*uEffectAmount).xyz;
-
-        float diffuseFactor = dot(normalize(filterNormal),up)*uEffectAmount;
-
-        tex.rgb += (1.0-diffuseFactor)*0.3*uEffectAmount;
+        tex.rgb += (1.0-diffuseFactor)*uEffectAmount*p2c;
 
         color.xyz = tex;
         color.w = 1.0;
@@ -163,7 +174,6 @@ void main(void) {
 
         float len = length(dist);
         float p2c = 2.0*len / sqrt(2.0);
-        p2c*= p2c;
         p2c*= p2c;
 
         int maxIters= 32;

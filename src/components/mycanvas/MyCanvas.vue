@@ -195,15 +195,15 @@
 
                 settings: {
                     water: {
-                        transition: [80, 100],
+                        transition: [70, 90],
                         period: 16.0,
                     },
                     radial: {
-                        transition:[80,100],
+                        transition:[60,90],
                         period: 16.0,
                     },
                     rgb: {
-                        transition:[60,80],
+                        transition:[50,70],
                         period: 16.0,
                     },
                     blur: {
@@ -247,8 +247,8 @@
                         period: 8.0,
                     },
                     filter: {
-                        transition:[100,100],
-                        period: 8.0,
+                        transition:[60,80],
+                        period: 16.0,
                     },
                 },
 
@@ -375,8 +375,8 @@
             let mandalaMaskTexture = webGl.loadTexture(gl, "textures/mandala_mask.png");
             let hexaSphereTexture = webGl.loadTexture(gl, "textures/hexa_texture.png");
             let hexaMaskTexture = webGl.loadTexture(gl, "textures/hexa_mask.png");
-            let filterNormalTexture = webGl.loadTexture(gl, "textures/filter_normal.jpg");
-            let filterBumpTexture = webGl.loadTexture(gl, "textures/filter_bump.jpg");
+            let filterNormalTexture = webGl.loadTexture(gl, "textures/filter_normal2.jpg");
+            let filterBumpTexture = webGl.loadTexture(gl, "textures/filter_bump2.jpg");
             let billboardMesh = webGl.createBillboard(gl);
 
             // **********************
