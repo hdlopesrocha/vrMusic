@@ -19,6 +19,13 @@
                     <button v-on:click="hideTable" >Hide</button>
                 </td>
             </tr>
+            <tr v-if="DEBUG">
+                <button v-on:click="recordVideo" >Record</button>
+                <button v-on:click="stopVideo" >Stop</button>
+                <td colspan>
+                    <video id="video"  ref="video" width="128" controls="true"></video>
+                </td>
+            </tr>
             <tr>
                 <td colspan="3">
                     Donate:
@@ -192,6 +199,7 @@
                 timeShift: 0,
                 hidden: false,
                 micAmp: 1.0,
+                recorder: null,
 
                 settings: {
                     water: {
@@ -283,6 +291,42 @@
             },
             pickFile(){
                 this.$refs.file.click();
+            },
+            recordVideo(){
+                const canvas = document.querySelector('#glcanvas');
+                const stream = canvas.captureStream();
+                let video = this.$refs.video;
+
+                this.recorder = new MediaRecorder(stream, {
+                    mimeType: 'video/webm',
+                });
+
+                // Get the blob data when is available
+                let recordedChunks = [];
+                this.recorder.ondataavailable = function(e) {
+                    console.log({e}) // img1
+                    recordedChunks.push(e.data);
+                };
+
+                this.recorder.onstop = function() {
+                    console.log("data available after MediaRecorder.stop() called.");
+                    video.controls = true;
+                    let blob = new Blob(recordedChunks, { 'type' : 'video/webm' });
+                    let videoURL = window.URL.createObjectURL(blob);
+                    video.src = videoURL;
+                    console.log("recorder stopped");
+                }
+
+                // Start to record
+                this.recorder.start()
+
+
+
+            },
+            stopVideo() {
+                if(this.recorder) {
+                    this.recorder.stop()
+                }
             },
             enableMusic(event){
                 this.audioContext = new AudioContext();
