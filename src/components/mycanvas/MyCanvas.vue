@@ -38,76 +38,76 @@
             </tr>
             <tr>
                 <td>Blur:</td>
-                <td><vue-slider v-model="blurTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="blurPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="blurSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="blurSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Cubes:</td>
-                <td><vue-slider v-model="cubesTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="cubesPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="cubesSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="cubesSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Cylinders:</td>
-                <td><vue-slider v-model="cylindersTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="cylindersPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="cylindersSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="cylindersSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Hexagons:</td>
-                <td><vue-slider v-model="hexagonsTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="hexagonsPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="hexagonsSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="hexagonsSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Mandala:</td>
-                <td><vue-slider v-model="mandalaTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="mandalaPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="mandalaSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="mandalaSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Model:</td>
-                <td><vue-slider v-model="modelTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="modelPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="modelSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="modelSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Neural:</td>
-                <td><vue-slider v-model="neuralTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="neuralPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="neuralSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="neuralSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Pyramids:</td>
-                <td><vue-slider v-model="pyramidsTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="pyramidsPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="pyramidsSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="pyramidsSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Stars:</td>
-                <td><vue-slider v-model="starsTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="starsPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="starsSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="starsSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Torus:</td>
-                <td><vue-slider v-model="torusTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="torusPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="torusSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="torusSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td><small>2D</small></td>
             </tr>
             <tr>
                 <td>Filter:</td>
-                <td><vue-slider v-model="filterTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="filterPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="filterSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="filterSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Radial:</td>
-                <td><vue-slider v-model="radialTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="radialPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="radialSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="radialSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>RGB:</td>
-                <td><vue-slider v-model="rgbTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="rgbPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="rgbSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="rgbSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Water:</td>
-                <td><vue-slider v-model="waterTransition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="waterPeriod" style="width: 32px"></td>
+                <td><vue-slider v-model="waterSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="waterSettings.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Mic Amplification:</td>
@@ -193,36 +193,62 @@
                 hidden: false,
                 micAmp: 1.0,
 
-
-                waterTransition: [80,100],
-                radialTransition: [80,100],
-                rgbTransition: [60,80],
-                blurTransition: [30,60],
-                cubesTransition: [50,70],
-                modelTransition: [40,50],
-                mandalaTransition: [40,60],
-                torusTransition: [40,60],
-                starsTransition: [40,60],
-                cylindersTransition: [40,60],
-                hexagonsTransition: [50,70],
-                pyramidsTransition: [50,70],
-                neuralTransition: [50,70],
-                filterTransition: [100,100],
-
-                waterPeriod: 16,
-                radialPeriod: 16,
-                rgbPeriod: 16,
-                blurPeriod: 8,
-                cubesPeriod: 8,
-                modelPeriod: 8,
-                mandalaPeriod: 8,
-                torusPeriod: 8,
-                starsPeriod: 8,
-                cylindersPeriod: 8,
-                hexagonsPeriod:8,
-                pyramidsPeriod: 8,
-                neuralPeriod: 8,
-                filterPeriod: 8,
+                waterSettings: {
+                    transition: [80, 100],
+                    period: 16.0,
+                },
+                radialSettings: {
+                    transition:[80,100],
+                    period: 16.0,
+                },
+                rgbSettings: {
+                    transition:[60,80],
+                    period: 16.0,
+                },
+                blurSettings: {
+                    transition:[30,60],
+                    period: 8.0,
+                },
+                cubesSettings: {
+                    transition:[50,70],
+                    period: 8.0,
+                },
+                modelSettings: {
+                    transition:[30,70],
+                    period: 8.0,
+                },
+                mandalaSettings: {
+                    transition:[40,60],
+                    period: 8.0,
+                },
+                torusSettings: {
+                    transition:[40,60],
+                    period: 8.0,
+                },
+                starsSettings: {
+                    transition:[40,60],
+                    period: 8.0,
+                },
+                cylindersSettings: {
+                    transition:[40,60],
+                    period: 8.0,
+                },
+                hexagonsSettings: {
+                    transition:[50,70],
+                    period: 8.0,
+                },
+                pyramidsSettings: {
+                    transition:[50,70],
+                    period: 8.0,
+                },
+                neuralSettings: {
+                    transition:[50,70],
+                    period: 8.0,
+                },
+                filterSettings: {
+                    transition:[100,100],
+                    period: 8.0,
+                },
 
                 mousePitch: 0,
                 mouseYaw: 0,
@@ -438,6 +464,13 @@
                 return clamp( (val-min)/(max - min) , 0.0 , 1.0);
             }
 
+            function transition(state, i , settings){
+                let sx = 1024*((i * 7919)%4463);
+                let sy = 1024*((i * 5861)%3709);
+                let sz = 1024*((i * 2389)%1847);
+                return lerp(webAudio.myNoise3dx(perlin.noise, state.time+sx, sy ,sz, settings.period),settings.transition[0]/100.0, settings.transition[1]/100.0);
+            }
+
             // eslint-disable-next-line no-unused-vars
             function update(gl, state) {
                 if(this.audioContext) {
@@ -516,26 +549,21 @@
 
                 let angularVelocity = 0.5;
 
-                let blurAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0 ,0.0, this.blurPeriod),this.blurTransition[0]/100.0, this.blurTransition[1]/100.0);
-
-                let cylinderAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time, 0.0, this.cylindersPeriod),this.cylindersTransition[0]/100.0, this.cylindersTransition[1]/100.0);
-                let cubesAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time, this.cubesPeriod),this.cubesTransition[0]/100.0, this.cubesTransition[1]/100.0);
-
-                let torusAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time ,0.0, this.torusPeriod),this.torusTransition[0]/100.0, this.torusTransition[1]/100.0);
-                let mandalaAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, 0.0, state.time , this.mandalaPeriod),this.mandalaTransition[0]/100.0, this.mandalaTransition[1]/100.0);
-                let starsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, state.time,  state.time , this.starsPeriod),this.starsTransition[0]/100.0, this.starsTransition[1]/100.0);
-
-                let modelAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time , this.modelPeriod),this.modelTransition[0]/100.0, this.modelTransition[1]/100.0);
-
-                let rgbShiftAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, state.time,  state.time , this.rgbPeriod), this.rgbTransition[0]/100.0, this.rgbTransition[1]/100.0 );
-                let waterAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time+1024,  state.time, this.waterPeriod),this.waterTransition[0]/100.0, this.waterTransition[1]/100.0);
-                let radialAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time, state.time,  state.time+1024 , this.radialPeriod),this.radialTransition[0]/100.0, this.radialTransition[1]/100.0);
-
-                let sphericalGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, state.time+1024, 0.0, 0.0, this.neuralPeriod),this.neuralTransition[0]/100.0, this.neuralTransition[1]/100.0);
-                let hexaGridAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0,state.time+1024, 0.0, this.hexagonsPeriod),this.hexagonsTransition[0]/100.0, this.hexagonsTransition[1]/100.0);
-                let pyramidsAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+1024, this.pyramidsPeriod),this.pyramidsTransition[0]/100.0, this.pyramidsTransition[1]/100.0);
-
-                let filterAmount = lerp(webAudio.myNoise3dx(perlin.noise, 0.0, 0.0 ,state.time+2048, this.filterPeriod),this.filterTransition[0]/100.0, this.filterTransition[1]/100.0);
+                let transitionIndex = 0;
+                let blurAmount = transition(state, transitionIndex++, this.blurSettings);
+                let cylinderAmount = transition(state, transitionIndex++, this.cylindersSettings);
+                let cubesAmount = transition(state, transitionIndex++, this.cubesSettings);
+                let torusAmount = transition(state, transitionIndex++, this.torusSettings);
+                let mandalaAmount = transition(state, transitionIndex++, this.mandalaSettings);
+                let starsAmount = transition(state, transitionIndex++, this.starsSettings);
+                let modelAmount = transition(state, transitionIndex++, this.modelSettings);
+                let rgbShiftAmount = transition(state, transitionIndex++, this.rgbSettings);
+                let waterAmount = transition(state, transitionIndex++, this.waterSettings);
+                let radialAmount = transition(state, transitionIndex++, this.radialSettings);
+                let sphericalGridAmount = transition(state, transitionIndex++, this.neuralSettings);
+                let hexagonGridAmount = transition(state, transitionIndex++, this.hexagonsSettings);
+                let pyramidsAmount = transition(state, transitionIndex++, this.pyramidsSettings);
+                let filterAmount = transition(state, transitionIndex++, this.filterSettings);
 
                 if(DEBUG) {
                     rgbShiftAmount=0.0;
@@ -715,8 +743,8 @@
                 // *******************
                 // Draw hexa grid mask
                 // *******************
-                if(hexaModel && hexaGridAmount) {
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, hexaGridAmount);
+                if(hexaModel && hexagonGridAmount) {
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, hexagonGridAmount);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_HEXA_GRID);
@@ -955,7 +983,7 @@
                 // ***********
                 // DRAW NORMAL
                 // ***********
-                if(hexaGridAmount){
+                if(hexagonGridAmount){
                     // common
                     webGl.copyBuffer(gl, drawFrameBuffer, temporaryBuffer);
                     webGl.prepareFor2D(gl, programInfo);
@@ -969,8 +997,8 @@
                 // *******************
                 // Draw hexa grid mask
                 // *******************
-                if(hexaModel && hexaGridAmount) {
-                    gl.uniform1f(programInfo.uniformLocations.effectAmount, hexaGridAmount);
+                if(hexaModel && hexagonGridAmount) {
+                    gl.uniform1f(programInfo.uniformLocations.effectAmount, hexagonGridAmount);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_HEXA_GRID);
