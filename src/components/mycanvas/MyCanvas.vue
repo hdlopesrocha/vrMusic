@@ -38,76 +38,76 @@
             </tr>
             <tr>
                 <td>Blur:</td>
-                <td><vue-slider v-model="blurSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="blurSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.blur.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.blur.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Cubes:</td>
-                <td><vue-slider v-model="cubesSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="cubesSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.cubes.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.cubes.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Cylinders:</td>
-                <td><vue-slider v-model="cylindersSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="cylindersSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.cylinders.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.cylinders.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Hexagons:</td>
-                <td><vue-slider v-model="hexagonsSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="hexagonsSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.hexagons.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.hexagons.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Mandala:</td>
-                <td><vue-slider v-model="mandalaSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="mandalaSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.mandala.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.mandala.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Model:</td>
-                <td><vue-slider v-model="modelSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="modelSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.model.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.model.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Neural:</td>
-                <td><vue-slider v-model="neuralSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="neuralSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.neural.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.neural.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Pyramids:</td>
-                <td><vue-slider v-model="pyramidsSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="pyramidsSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.pyramids.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.pyramids.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Stars:</td>
-                <td><vue-slider v-model="starsSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="starsSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.stars.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.stars.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Torus:</td>
-                <td><vue-slider v-model="torusSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="torusSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.torus.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.torus.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td><small>2D</small></td>
             </tr>
             <tr>
                 <td>Filter:</td>
-                <td><vue-slider v-model="filterSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="filterSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.filter.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.filter.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Radial:</td>
-                <td><vue-slider v-model="radialSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="radialSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.radial.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.radial.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>RGB:</td>
-                <td><vue-slider v-model="rgbSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="rgbSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.rgb.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.rgb.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Water:</td>
-                <td><vue-slider v-model="waterSettings.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
-                <td><input type="number" v-model="waterSettings.period" style="width: 32px"></td>
+                <td><vue-slider v-model="settings.water.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
+                <td><input type="number" v-model="settings.water.period" style="width: 32px"></td>
             </tr>
             <tr>
                 <td>Mic Amplification:</td>
@@ -193,61 +193,63 @@
                 hidden: false,
                 micAmp: 1.0,
 
-                waterSettings: {
-                    transition: [80, 100],
-                    period: 16.0,
-                },
-                radialSettings: {
-                    transition:[80,100],
-                    period: 16.0,
-                },
-                rgbSettings: {
-                    transition:[60,80],
-                    period: 16.0,
-                },
-                blurSettings: {
-                    transition:[30,60],
-                    period: 8.0,
-                },
-                cubesSettings: {
-                    transition:[50,70],
-                    period: 8.0,
-                },
-                modelSettings: {
-                    transition:[30,70],
-                    period: 8.0,
-                },
-                mandalaSettings: {
-                    transition:[40,60],
-                    period: 8.0,
-                },
-                torusSettings: {
-                    transition:[40,60],
-                    period: 8.0,
-                },
-                starsSettings: {
-                    transition:[40,60],
-                    period: 8.0,
-                },
-                cylindersSettings: {
-                    transition:[40,60],
-                    period: 8.0,
-                },
-                hexagonsSettings: {
-                    transition:[50,70],
-                    period: 8.0,
-                },
-                pyramidsSettings: {
-                    transition:[50,70],
-                    period: 8.0,
-                },
-                neuralSettings: {
-                    transition:[50,70],
-                    period: 8.0,
-                },
-                filterSettings: {
-                    transition:[100,100],
-                    period: 8.0,
+                settings: {
+                    water: {
+                        transition: [80, 100],
+                        period: 16.0,
+                    },
+                    radial: {
+                        transition:[80,100],
+                        period: 16.0,
+                    },
+                    rgb: {
+                        transition:[60,80],
+                        period: 16.0,
+                    },
+                    blur: {
+                        transition:[30,60],
+                        period: 8.0,
+                    },
+                    cubes: {
+                        transition:[50,70],
+                        period: 8.0,
+                    },
+                    model: {
+                        transition:[30,70],
+                        period: 8.0,
+                    },
+                    mandala: {
+                        transition:[40,60],
+                        period: 8.0,
+                    },
+                    torus: {
+                        transition:[40,60],
+                        period: 8.0,
+                    },
+                    stars: {
+                        transition:[40,60],
+                        period: 8.0,
+                    },
+                    cylinders: {
+                        transition:[40,60],
+                        period: 8.0,
+                    },
+                    hexagons: {
+                        transition:[50,70],
+                        period: 8.0,
+                    },
+                    pyramids: {
+                        transition:[50,70],
+                        period: 8.0,
+                    },
+                    neural: {
+                        transition:[50,70],
+                        period: 8.0,
+                    },
+                    filter: {
+                        transition:[100,100],
+                        period: 8.0,
+                    },
                 },
 
                 mousePitch: 0,
@@ -550,20 +552,20 @@
                 let angularVelocity = 0.5;
 
                 let transitionIndex = 0;
-                let blurAmount = transition(state, transitionIndex++, this.blurSettings);
-                let cylinderAmount = transition(state, transitionIndex++, this.cylindersSettings);
-                let cubesAmount = transition(state, transitionIndex++, this.cubesSettings);
-                let torusAmount = transition(state, transitionIndex++, this.torusSettings);
-                let mandalaAmount = transition(state, transitionIndex++, this.mandalaSettings);
-                let starsAmount = transition(state, transitionIndex++, this.starsSettings);
-                let modelAmount = transition(state, transitionIndex++, this.modelSettings);
-                let rgbShiftAmount = transition(state, transitionIndex++, this.rgbSettings);
-                let waterAmount = transition(state, transitionIndex++, this.waterSettings);
-                let radialAmount = transition(state, transitionIndex++, this.radialSettings);
-                let sphericalGridAmount = transition(state, transitionIndex++, this.neuralSettings);
-                let hexagonGridAmount = transition(state, transitionIndex++, this.hexagonsSettings);
-                let pyramidsAmount = transition(state, transitionIndex++, this.pyramidsSettings);
-                let filterAmount = transition(state, transitionIndex++, this.filterSettings);
+                let blurAmount = transition(state, transitionIndex++, this.settings.blur);
+                let cylinderAmount = transition(state, transitionIndex++, this.settings.cylinders);
+                let cubesAmount = transition(state, transitionIndex++, this.settings.cubes);
+                let torusAmount = transition(state, transitionIndex++, this.settings.torus);
+                let mandalaAmount = transition(state, transitionIndex++, this.settings.mandala);
+                let starsAmount = transition(state, transitionIndex++, this.settings.stars);
+                let modelAmount = transition(state, transitionIndex++, this.settings.model);
+                let rgbShiftAmount = transition(state, transitionIndex++, this.settings.rgb);
+                let waterAmount = transition(state, transitionIndex++, this.settings.water);
+                let radialAmount = transition(state, transitionIndex++, this.settings.radial);
+                let sphericalGridAmount = transition(state, transitionIndex++, this.settings.neural);
+                let hexagonGridAmount = transition(state, transitionIndex++, this.settings.hexagons);
+                let pyramidsAmount = transition(state, transitionIndex++, this.settings.pyramids);
+                let filterAmount = transition(state, transitionIndex++, this.settings.filter);
 
                 if(DEBUG) {
                     rgbShiftAmount=0.0;
