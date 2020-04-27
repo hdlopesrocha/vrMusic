@@ -20,6 +20,8 @@ uniform float uTime;
 uniform float uTimeShift;
 uniform float uAnimationVelocity;
 uniform float uAudioLevel;
+uniform vec4 uAmbientColor;
+uniform vec4 uModelColor;
 
 out vec4 vColor;
 out vec3 vNormal;
@@ -27,9 +29,9 @@ out vec3 vLightDirection;
 out vec2 vTextureCoordinates;
 out vec4 vPosition;
 
-//#COMMON
-//#PERLIN
-//#HSL2RGB
+#include "common.glsl"
+#include "perlin.glsl"
+#include "hsl2rgb.glsl"
 
 void main(void) {
     vec2 tTextureCoordinates = aTextureCoordinates;
@@ -255,7 +257,7 @@ void main(void) {
                 0.0
             );
             vPosition += displacement;
-        }else if (uDrawMode == DRAW_MODE_3D_HEXA_GRID) {
+        }else if (uDrawMode == DRAW_MODE_3D_HEXAGON_GRID) {
             float geometryVelocity = 0.2;// color changes quicker
             float geometryFrequency = 3.2;// color is wider
 
@@ -291,6 +293,8 @@ void main(void) {
                 0.0
             );
             vPosition += displacement;
+        } else {
+            vColor = uModelColor;
         }
 
             mat3 vNormalMatrix = transpose(inverse(mat3(uModelMatrix)));

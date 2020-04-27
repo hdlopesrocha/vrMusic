@@ -249,6 +249,8 @@ export default {
                 audioSampler: gl.getUniformLocation(shaderProgram, 'uAudioSampler'),
                 audioLevel: gl.getUniformLocation(shaderProgram, 'uAudioLevel'),
                 effectAmount: gl.getUniformLocation(shaderProgram, 'uEffectAmount'),
+                ambientColor: gl.getUniformLocation(shaderProgram, 'uAmbientColor'),
+                modelColor: gl.getUniformLocation(shaderProgram, 'uModelColor'),
             },
         };
     },

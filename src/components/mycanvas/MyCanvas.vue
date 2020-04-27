@@ -19,7 +19,7 @@
                     <button v-on:click="hideTable" >Hide</button>
                 </td>
             </tr>
-            <tr v-if="DEBUG">
+            <tr v-if="debug">
                 <button v-on:click="recordVideo" >Record</button>
                 <button v-on:click="stopVideo" >Stop</button>
                 <td colspan>
@@ -112,7 +112,7 @@
                 <td><input type="number" v-model="settings.rgb.period" style="width: 32px"></td>
             </tr>
             <tr>
-                <td>Water:</td>
+                <td>Wate:</td>
                 <td><vue-slider v-model="settings.water.transition" :min-range="1" :max-range="100" style="width: 100%" ></vue-slider></td>
                 <td><input type="number" v-model="settings.water.period" style="width: 32px"></td>
             </tr>
@@ -132,39 +132,47 @@
     const MOUSE_SPEED = 0.003;
 
     // 2D MODES
-    const DRAW_MODE_2D_FILTER = -10
-    const DRAW_MODE_2D_NORMAL= -9
-    const DRAW_MODE_2D_WATER = -8
-    const DRAW_MODE_2D_SHIFT = -7
-    const DRAW_MODE_2D_RADIAL = -6
-    const DRAW_MODE_2D_LENS = -5
-    const DRAW_MODE_2D_BLUR = -4
-    const DRAW_MODE_2D_MIX = -3
-    const DRAW_MODE_2D = -2
+    const DRAW_MODE_2D_FILTER = -9
+    const DRAW_MODE_2D_NORMAL= -8
+    const DRAW_MODE_2D_WATER = -7
+    const DRAW_MODE_2D_SHIFT = -6
+    const DRAW_MODE_2D_RADIAL = -5
+    const DRAW_MODE_2D_LENS = -4
+    const DRAW_MODE_2D_BLUR = -3
+    const DRAW_MODE_2D_MIX = -2
+    const DRAW_MODE_2D = -1
 
     // 3D MODES
-    const DRAW_MODE_3D_MASK = -1
     const DRAW_MODE_3D_DEFAULT = 0
     const DRAW_MODE_3D_SKY = 1
     const DRAW_MODE_3D_CYLINDER = 2
     const DRAW_MODE_3D_EDGES = 3
-    const DRAW_MODE_3D_NO_EDGES_MASK = 4
-    const DRAW_MODE_3D_BILLBOARD = 5
-    const DRAW_MODE_3D_TORUS = 6
-    const DRAW_MODE_3D_MANDALA = 7
-    const DRAW_MODE_3D_CUBE = 8
-    const DRAW_MODE_3D_SPHERICAL_GRID = 9
-    const DRAW_MODE_3D_HEXA_GRID = 10
-    const DRAW_MODE_3D_PYRAMID = 11
-    const DRAW_MODE_3D_MODEL = 12
+    const DRAW_MODE_3D_BILLBOARD = 4
+    const DRAW_MODE_3D_TORUS = 5
+    const DRAW_MODE_3D_MANDALA = 6
+    const DRAW_MODE_3D_CUBE = 7
+    const DRAW_MODE_3D_SPHERICAL_GRID = 8
+    const DRAW_MODE_3D_HEXAGON_GRID = 9
+    const DRAW_MODE_3D_PYRAMID = 10
+    const DRAW_MODE_3D_MODEL = 11
     /* eslint-enable no-unused-vars */
-
 
     import vertexShader from 'raw-loader!./vert.glsl';
     import fragmentShader from 'raw-loader!./frag.glsl';
     import perlinShader from 'raw-loader!./perlin.glsl';
     import hsl2rgbShader from 'raw-loader!./hsl2rgb.glsl';
     import commonShader from 'raw-loader!./common.glsl';
+    import waterFragmentShader from 'raw-loader!./shaders/waterFrag.glsl';
+    import rgbShiftFragmentShader from 'raw-loader!./shaders/rgbShiftFrag.glsl';
+    import utilFragmentShader from 'raw-loader!./shaders/utilFrag.glsl';
+    import filterFragmentShader from 'raw-loader!./shaders/filterFrag.glsl';
+    import blurFragmentShader from 'raw-loader!./shaders/blurFrag.glsl';
+    import radialFragmentShader from 'raw-loader!./shaders/radialFrag.glsl';
+    import normalFragmentShader from 'raw-loader!./shaders/normalFrag.glsl';
+    import lensFragmentShader from 'raw-loader!./shaders/lensFrag.glsl';
+    import neuralFragmentShader from 'raw-loader!./shaders/neuralFrag.glsl';
+    import hexagonFragmentShader from 'raw-loader!./shaders/hexagonFrag.glsl';
+    import edgeFragmentShader from 'raw-loader!./shaders/edgeFrag.glsl';
 
     import webGl from '../../utils/webGl'
     import webAudio from '../../utils/webAudio';
@@ -200,6 +208,7 @@
                 hidden: false,
                 micAmp: 1.0,
                 recorder: null,
+                debug: DEBUG,
 
                 settings: {
                     water: {
@@ -385,15 +394,33 @@
                 console.log(this);
             }.bind(this));
 
-            let fShader = fragmentShader
-                .replace("//#PERLIN", perlinShader)
-                .replace("//#COMMON", commonShader)
-                .replace("//#HSL2RGB", hsl2rgbShader);
-            let vShader = vertexShader
-                .replace("//#PERLIN", perlinShader)
-                .replace("//#COMMON", commonShader)
-                .replace("//#HSL2RGB", hsl2rgbShader);
+            const replace = {
+                '#include "perlin.glsl"': perlinShader,
+                '#include "common.glsl"': commonShader,
+                '#include "hsl2rgb.glsl"': hsl2rgbShader,
+                '#include "shaders/utilFrag.glsl"': utilFragmentShader,
+                '#include "shaders/waterFrag.glsl"': waterFragmentShader,
+                '#include "shaders/rgbShiftFrag.glsl"': rgbShiftFragmentShader,
+                '#include "shaders/filterFrag.glsl"': filterFragmentShader,
+                '#include "shaders/blurFrag.glsl"': blurFragmentShader,
+                '#include "shaders/radialFrag.glsl"': radialFragmentShader,
+                '#include "shaders/normalFrag.glsl"': normalFragmentShader,
+                '#include "shaders/lensFrag.glsl"': lensFragmentShader,
+                '#include "shaders/neuralFrag.glsl"': neuralFragmentShader,
+                '#include "shaders/hexagonFrag.glsl"': hexagonFragmentShader,
+                '#include "shaders/edgeFrag.glsl"': edgeFragmentShader,
+            };
 
+
+            let fShader = fragmentShader;
+            let vShader = vertexShader;
+
+            for (let key in replace) {
+                fShader = fShader.replace(key, replace[key]);
+                vShader = vShader.replace(key, replace[key]);
+            }
+
+            console.log(fShader);
 
             const shaderProgram = webGl.initShaderProgram(gl, vShader, fShader);
             gl.useProgram(shaderProgram);
@@ -682,7 +709,7 @@
                     gl.enable(gl.CULL_FACE);
 
                     for (let mesh of torusModel) {
-                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES, pixel);
                     }
                 }
 
@@ -793,7 +820,7 @@
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, hexagonGridAmount);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_HEXA_GRID);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_HEXAGON_GRID);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
@@ -884,7 +911,7 @@
                     glm.mat4.scale(modelMatrix, modelMatrix, scale);
                     glm.mat4.rotateY(modelMatrix, modelMatrix, -this.timeShift*angularVelocity);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_MASK);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_DEFAULT);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
                     gl.enable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
@@ -912,9 +939,9 @@
                     gl.enable(gl.CULL_FACE);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
                     gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix, false, modelMatrix);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_NO_EDGES_MASK);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_DEFAULT);
                     for (let mesh of statueModel) {
-                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES);
+                        webGl.drawMesh(gl, programInfo, mesh, gl.TRIANGLES, pixel);
                     }
                 }
 
@@ -978,6 +1005,8 @@
                     gl.enable(gl.DEPTH_TEST);
                     gl.enable(gl.CULL_FACE);
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 1);
+                    gl.uniform4f(programInfo.uniformLocations.ambientColor, 0.2,0.2,0.2, 0.0);
+                    gl.uniform4f(programInfo.uniformLocations.modelColor, 0.15,0.15,0.15, 1.0);
 
                     // 1st pass
                     gl.bindFramebuffer(gl.FRAMEBUFFER, alphaFrameBuffer.frame);
@@ -1047,7 +1076,7 @@
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, hexagonGridAmount);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_HEXA_GRID);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_HEXAGON_GRID);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
