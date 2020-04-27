@@ -25,8 +25,8 @@ in vec4 vPosition;
 out vec4 fragColor;
 
 #include "common.glsl"
-#include "perlin.glsl"
-#include "hsl2rgb.glsl"
+#include "libs/perlin.glsl"
+#include "libs/hsl2rgb.glsl"
 #include "shaders/utilFrag.glsl"
 #include "shaders/waterFrag.glsl"
 #include "shaders/rgbShiftFrag.glsl"

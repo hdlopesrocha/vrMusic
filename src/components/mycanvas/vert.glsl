@@ -30,8 +30,8 @@ out vec2 vTextureCoordinates;
 out vec4 vPosition;
 
 #include "common.glsl"
-#include "perlin.glsl"
-#include "hsl2rgb.glsl"
+#include "libs/perlin.glsl"
+#include "libs/hsl2rgb.glsl"
 #include "shaders/cylinderVert.glsl"
 #include "shaders/edgeVert.glsl"
 #include "shaders/skyVert.glsl"

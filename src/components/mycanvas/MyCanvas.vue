@@ -159,8 +159,8 @@
 
     import vertexShader from 'raw-loader!./vert.glsl';
     import fragmentShader from 'raw-loader!./frag.glsl';
-    import perlinShader from 'raw-loader!./perlin.glsl';
-    import hsl2rgbShader from 'raw-loader!./hsl2rgb.glsl';
+    import perlinShader from 'raw-loader!./libs/perlin.glsl';
+    import hsl2rgbShader from 'raw-loader!./libs/hsl2rgb.glsl';
     import commonShader from 'raw-loader!./common.glsl';
     import waterFragmentShader from 'raw-loader!./shaders/waterFrag.glsl';
     import rgbShiftFragmentShader from 'raw-loader!./shaders/rgbShiftFrag.glsl';
@@ -405,9 +405,9 @@
             }.bind(this));
 
             const includes = {
-                '#include "perlin.glsl"': perlinShader,
                 '#include "common.glsl"': commonShader,
-                '#include "hsl2rgb.glsl"': hsl2rgbShader,
+                '#include "libs/perlin.glsl"': perlinShader,
+                '#include "libs/hsl2rgb.glsl"': hsl2rgbShader,
                 '#include "shaders/utilFrag.glsl"': utilFragmentShader,
                 '#include "shaders/waterFrag.glsl"': waterFragmentShader,
                 '#include "shaders/rgbShiftFrag.glsl"': rgbShiftFragmentShader,
