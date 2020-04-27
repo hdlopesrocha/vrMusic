@@ -57,7 +57,7 @@ void main(void) {
         color = filterFrag(vTextureCoordinates);
     } else if(uDrawMode == DRAW_MODE_2D_RADIAL){
         color = radialFrag(vTextureCoordinates);
-    } else if (uDrawMode == DRAW_MODE_3D_SPHERICAL_GRID) {
+    } else if (uDrawMode == DRAW_MODE_3D_NEURAL_GRID) {
         color = neuralFrag(vTextureCoordinates);
     } else if (uDrawMode == DRAW_MODE_3D_HEXAGON_GRID) {
         color = hexagonFrag(vTextureCoordinates);

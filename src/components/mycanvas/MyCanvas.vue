@@ -151,7 +151,7 @@
     const DRAW_MODE_3D_TORUS = 5
     const DRAW_MODE_3D_MANDALA = 6
     const DRAW_MODE_3D_CUBE = 7
-    const DRAW_MODE_3D_SPHERICAL_GRID = 8
+    const DRAW_MODE_3D_NEURAL_GRID = 8
     const DRAW_MODE_3D_HEXAGON_GRID = 9
     const DRAW_MODE_3D_PYRAMID = 10
     const DRAW_MODE_3D_MODEL = 11
@@ -173,6 +173,16 @@
     import neuralFragmentShader from 'raw-loader!./shaders/neuralFrag.glsl';
     import hexagonFragmentShader from 'raw-loader!./shaders/hexagonFrag.glsl';
     import edgeFragmentShader from 'raw-loader!./shaders/edgeFrag.glsl';
+    import cylinderVertexShader from 'raw-loader!./shaders/cylinderVert.glsl';
+    import edgeVertexShader from 'raw-loader!./shaders/edgeVert.glsl';
+    import skyVertexShader from 'raw-loader!./shaders/skyVert.glsl';
+    import billboardVertexShader from 'raw-loader!./shaders/billboardVert.glsl';
+    import mandalaVertexShader from 'raw-loader!./shaders/mandalaVert.glsl';
+    import torusVertexShader from 'raw-loader!./shaders/torusVert.glsl';
+    import cubeVertexShader from 'raw-loader!./shaders/cubeVert.glsl';
+    import pyramidVertexShader from 'raw-loader!./shaders/pyramidVert.glsl';
+    import neuralVertexShader from 'raw-loader!./shaders/neuralVert.glsl';
+    import hexagonVertexShader from 'raw-loader!./shaders/hexagonVert.glsl';
 
     import webGl from '../../utils/webGl'
     import webAudio from '../../utils/webAudio';
@@ -394,7 +404,7 @@
                 console.log(this);
             }.bind(this));
 
-            const replace = {
+            const includes = {
                 '#include "perlin.glsl"': perlinShader,
                 '#include "common.glsl"': commonShader,
                 '#include "hsl2rgb.glsl"': hsl2rgbShader,
@@ -409,18 +419,25 @@
                 '#include "shaders/neuralFrag.glsl"': neuralFragmentShader,
                 '#include "shaders/hexagonFrag.glsl"': hexagonFragmentShader,
                 '#include "shaders/edgeFrag.glsl"': edgeFragmentShader,
+                '#include "shaders/cylinderVert.glsl"': cylinderVertexShader,
+                '#include "shaders/edgeVert.glsl"': edgeVertexShader,
+                '#include "shaders/skyVert.glsl"': skyVertexShader,
+                '#include "shaders/billboardVert.glsl"': billboardVertexShader,
+                '#include "shaders/mandalaVert.glsl"': mandalaVertexShader,
+                '#include "shaders/torusVert.glsl"': torusVertexShader,
+                '#include "shaders/cubeVert.glsl"': cubeVertexShader,
+                '#include "shaders/pyramidVert.glsl"': pyramidVertexShader,
+                '#include "shaders/neuralVert.glsl"': neuralVertexShader,
+                '#include "shaders/hexagonVert.glsl"': hexagonVertexShader,
             };
-
 
             let fShader = fragmentShader;
             let vShader = vertexShader;
 
-            for (let key in replace) {
-                fShader = fShader.replace(key, replace[key]);
-                vShader = vShader.replace(key, replace[key]);
+            for (let key in includes) {
+                fShader = fShader.replace(key, includes[key]);
+                vShader = vShader.replace(key, includes[key]);
             }
-
-            console.log(fShader);
 
             const shaderProgram = webGl.initShaderProgram(gl, vShader, fShader);
             gl.useProgram(shaderProgram);
@@ -797,7 +814,7 @@
                     gl.uniform1f(programInfo.uniformLocations.effectAmount, sphericalGridAmount);
 
                     gl.uniform1i(programInfo.uniformLocations.enableLight, 0);
-                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_SPHERICAL_GRID);
+                    gl.uniform1i(programInfo.uniformLocations.drawMode, DRAW_MODE_3D_NEURAL_GRID);
                     gl.disable(gl.DEPTH_TEST);
                     gl.disable(gl.CULL_FACE);
 
