@@ -159,30 +159,6 @@
 
     import vertexShader from 'raw-loader!./vert.glsl';
     import fragmentShader from 'raw-loader!./frag.glsl';
-    import perlinShader from 'raw-loader!./libs/perlin.glsl';
-    import hsl2rgbShader from 'raw-loader!./libs/hsl2rgb.glsl';
-    import commonShader from 'raw-loader!./common.glsl';
-    import waterFragmentShader from 'raw-loader!./shaders/waterFrag.glsl';
-    import rgbShiftFragmentShader from 'raw-loader!./shaders/rgbShiftFrag.glsl';
-    import utilFragmentShader from 'raw-loader!./shaders/utilFrag.glsl';
-    import filterFragmentShader from 'raw-loader!./shaders/filterFrag.glsl';
-    import blurFragmentShader from 'raw-loader!./shaders/blurFrag.glsl';
-    import radialFragmentShader from 'raw-loader!./shaders/radialFrag.glsl';
-    import normalFragmentShader from 'raw-loader!./shaders/normalFrag.glsl';
-    import lensFragmentShader from 'raw-loader!./shaders/lensFrag.glsl';
-    import neuralFragmentShader from 'raw-loader!./shaders/neuralFrag.glsl';
-    import hexagonFragmentShader from 'raw-loader!./shaders/hexagonFrag.glsl';
-    import edgeFragmentShader from 'raw-loader!./shaders/edgeFrag.glsl';
-    import cylinderVertexShader from 'raw-loader!./shaders/cylinderVert.glsl';
-    import edgeVertexShader from 'raw-loader!./shaders/edgeVert.glsl';
-    import skyVertexShader from 'raw-loader!./shaders/skyVert.glsl';
-    import billboardVertexShader from 'raw-loader!./shaders/billboardVert.glsl';
-    import mandalaVertexShader from 'raw-loader!./shaders/mandalaVert.glsl';
-    import torusVertexShader from 'raw-loader!./shaders/torusVert.glsl';
-    import cubeVertexShader from 'raw-loader!./shaders/cubeVert.glsl';
-    import pyramidVertexShader from 'raw-loader!./shaders/pyramidVert.glsl';
-    import neuralVertexShader from 'raw-loader!./shaders/neuralVert.glsl';
-    import hexagonVertexShader from 'raw-loader!./shaders/hexagonVert.glsl';
 
     import webGl from '../../utils/webGl'
     import webAudio from '../../utils/webAudio';
@@ -404,39 +380,20 @@
                 console.log(this);
             }.bind(this));
 
-            const includes = {
-                '#include "common.glsl"': commonShader,
-                '#include "libs/perlin.glsl"': perlinShader,
-                '#include "libs/hsl2rgb.glsl"': hsl2rgbShader,
-                '#include "shaders/utilFrag.glsl"': utilFragmentShader,
-                '#include "shaders/waterFrag.glsl"': waterFragmentShader,
-                '#include "shaders/rgbShiftFrag.glsl"': rgbShiftFragmentShader,
-                '#include "shaders/filterFrag.glsl"': filterFragmentShader,
-                '#include "shaders/blurFrag.glsl"': blurFragmentShader,
-                '#include "shaders/radialFrag.glsl"': radialFragmentShader,
-                '#include "shaders/normalFrag.glsl"': normalFragmentShader,
-                '#include "shaders/lensFrag.glsl"': lensFragmentShader,
-                '#include "shaders/neuralFrag.glsl"': neuralFragmentShader,
-                '#include "shaders/hexagonFrag.glsl"': hexagonFragmentShader,
-                '#include "shaders/edgeFrag.glsl"': edgeFragmentShader,
-                '#include "shaders/cylinderVert.glsl"': cylinderVertexShader,
-                '#include "shaders/edgeVert.glsl"': edgeVertexShader,
-                '#include "shaders/skyVert.glsl"': skyVertexShader,
-                '#include "shaders/billboardVert.glsl"': billboardVertexShader,
-                '#include "shaders/mandalaVert.glsl"': mandalaVertexShader,
-                '#include "shaders/torusVert.glsl"': torusVertexShader,
-                '#include "shaders/cubeVert.glsl"': cubeVertexShader,
-                '#include "shaders/pyramidVert.glsl"': pyramidVertexShader,
-                '#include "shaders/neuralVert.glsl"': neuralVertexShader,
-                '#include "shaders/hexagonVert.glsl"': hexagonVertexShader,
-            };
-
             let fShader = fragmentShader;
             let vShader = vertexShader;
+            let regexp = /#include "([^"]+)"/g;
 
-            for (let key in includes) {
-                fShader = fShader.replace(key, includes[key]);
-                vShader = vShader.replace(key, includes[key]);
+            let fArray = [...fragmentShader.matchAll(regexp)];
+            for(let str of fArray) {
+                let code = require("raw-loader!./"+ str[1]);
+                fShader = fShader.replace(str[0], code.default);
+            }
+
+            let vArray = [...vertexShader.matchAll(regexp)];
+            for(let str of vArray) {
+                let code = require("raw-loader!./"+ str[1]);
+                vShader = vShader.replace(str[0], code.default);
             }
 
             const shaderProgram = webGl.initShaderProgram(gl, vShader, fShader);
