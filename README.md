@@ -22,3 +22,7 @@ npm run lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+
+### Live Demo
+See [Demo](https://hdlopesrocha.github.io/vrMusic/).
